@@ -1,0 +1,4 @@
+
+repl completions
+   http://stackoverflow.com/questions/30455356/how-to-configure-the-racket-interpreter-to-support-command-history
+   racket -il xrepl
