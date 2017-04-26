@@ -44,13 +44,17 @@ getMinorPairs' (coeffs:rest) n =
    (coeffs !! n,
 -}
 
-excludeColumn :: (Num a) => [[a]] -> Int -> [[a]]
-excludeColumn m i = map (excludeIndex i) m
+excludeColumn :: M.Matrix a -> Int -> M.Matrix a
+excludeColumn = M.fromList . excludeColumn' . M.toList
 
-excludeIndex :: [a] -> Int -> [a]
-excludeIndex excludeIndex = fst . foldr
-   (\item (index, lst) -> if index == excludeIndex then (index+1, lst) else (index+1, item : lst))
-   (0, [])
+excludeColumn' :: (Num a) => [[a]] -> Int -> [[a]]
+excludeColumn' m i = map (excludeIndex i) m
+
+excludeIndex :: Int -> [a] -> [a]
+excludeIndex excludeIndex xs = snd $ foldr
+   (\item (index, lst) -> if index == excludeIndex then (index-1, lst) else (index-1, item : lst))
+   (length xs - 1, [])
+   xs
 
 --determinant :: (Num a) => [[a]] -> a
 --determinant xs = determinant' (M.fromLists xs)
