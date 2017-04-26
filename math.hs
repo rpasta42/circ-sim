@@ -36,19 +36,20 @@ M.getElem 2 3 m
 
 
 --pair of minor matrices and coefficients
-{-|getMinorPairs :: (Num a) => Matrix a -> [(Matrix a, a)]
-getMinorPairs m = getMinorPairs' m 0
+getMinorPairs :: (Num a) => M.Matrix a -> [(M.Matrix a, a)]
+getMinorPairs m = map (getMinorPairs' m [0..M.ncols m]) $ M.toLists m
 
-getMinorPairs' :: (Num a) => [[a]] -> Int -> [([[a]], a)]
-getMinorPairs' (coeffs:rest) n =
-   (coeffs !! n,
--}
+getMinorPairs' :: (Num a) => [[a]] -> Int -> (M.Matrix a, a)
+getMinorPairs' (coeffs:rest) n = (coeffs !! n, excludeColumn' n rest)
 
-excludeColumn :: M.Matrix a -> Int -> M.Matrix a
-excludeColumn = M.fromList . excludeColumn' . M.toList
 
-excludeColumn' :: (Num a) => [[a]] -> Int -> [[a]]
-excludeColumn' m i = map (excludeIndex i) m
+excludeColumn :: Int -> M.Matrix a -> M.Matrix a
+--excludeColumn i m = M.fromLists $ excludeColumn' i $ M.toLists m
+excludeColumn i = M.fromLists . (excludeColumn' i) . M.toLists
+
+
+excludeColumn' :: Int -> [[a]] -> [[a]]
+excludeColumn' i m = map (excludeIndex i) m
 
 excludeIndex :: Int -> [a] -> [a]
 excludeIndex excludeIndex xs = snd $ foldr
