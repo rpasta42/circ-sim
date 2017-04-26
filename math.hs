@@ -35,8 +35,10 @@ M.getElem 2 3 m
 -}
 
 
+type MatrixMinor a = (a, M.Matrix a)
+
 --pair of minor matrices and coefficients
-getMinorPairs :: (Num a) => M.Matrix a -> [(a, M.Matrix a)]
+getMinorPairs :: (Num a) => M.Matrix a -> [MatrixMinor a]
 getMinorPairs m = map (\index -> getMinorPairs' lstM index) [0..M.ncols m-1]
    where lstM = M.toLists m
 
@@ -47,7 +49,6 @@ getMinorPairs' (coeffs:rest) n = (coeffs !! n, M.fromLists $ excludeColumn' n re
 excludeColumn :: Int -> M.Matrix a -> M.Matrix a
 --excludeColumn i m = M.fromLists $ excludeColumn' i $ M.toLists m
 excludeColumn i = M.fromLists . (excludeColumn' i) . M.toLists
-
 
 excludeColumn' :: Int -> [[a]] -> [[a]]
 excludeColumn' i m = map (excludeIndex i) m
@@ -66,9 +67,14 @@ excludeIndex excludeIndex xs = snd $ foldr
 --   | nrows m == 0 && ncols m == 0 = error "empty matrix"
 --   |
 
-
-
 --bad
 --determinant [] = error "empty matrix"
 --determinant [[x]] =
+
+displayMatrixMinors matrix = do
+   let xs = getMinorPairs matrix
+   mapM_ putStrLn $ map (\(i, subm) -> ((show i) ++ " \n| \n" ++ (M.prettyMatrix subm) ++ "|\n")) xs
+
+main = displayMatrixMinors m
+
 
