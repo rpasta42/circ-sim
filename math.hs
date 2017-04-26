@@ -21,7 +21,7 @@ ncols = 3
 
 
 
-lst = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+lst = [[1, 5, 3], [4, 5, 6], [7, 8, 9]]
 
 {-|
 lst = [
@@ -77,12 +77,12 @@ determinant m
 determinant' :: (Num a) => M.Matrix a -> a
 determinant' m =
    let minorPairs = getMinorPair m
-       alternatingSigns = (concat $ repeat [(+), (-)]) :: Num a => [a -> a -> a]
+       alternatingSigns = concat $ repeat ['m', 'p']
    in
       foldr
-         (\ (sign, (coeff, matrix)) acc -> sign acc (coeff * determinant matrix))
+         (\ (sign, (coeff, matrix)) acc -> ((if sign == 'p' then (+) else (-)) acc (coeff * determinant matrix)))
          0
-         zip alternatingSigns minorPairs
+         (zip alternatingSigns minorPairs)
 
 
 
