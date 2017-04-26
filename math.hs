@@ -1,4 +1,5 @@
 import qualified Data.Matrix as M
+import Data.List (concat)
 
 --cabal install matrix
 --https://hackage.haskell.org/package/matrix-0.3.5.0/docs/Data-Matrix.html
@@ -22,6 +23,14 @@ ncols = 3
 
 lst = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
+{-|
+lst = [
+   ['a', 'b', 'c', 'd'],
+   ['e', 'f', 'g', 'h'],
+   ['i', 'j', 'k', 'l'],
+   ['m', 'n', 'o', 'p']]
+-}
+
 m = M.fromLists lst
 
 {-|
@@ -35,15 +44,15 @@ M.getElem 2 3 m
 -}
 
 
-type MatrixMinor a = (a, M.Matrix a)
+type MinorPair a = (a, M.Matrix a)
 
 --pair of minor matrices and coefficients
-getMinorPairs :: (Num a) => M.Matrix a -> [MatrixMinor a]
-getMinorPairs m = map (\index -> getMinorPairs' lstM index) [0..M.ncols m-1]
+getMinorPair :: M.Matrix a -> [MinorPair a]
+getMinorPair m = map (\index -> getMinorPair' lstM index) [0..M.ncols m-1]
    where lstM = M.toLists m
 
-getMinorPairs' :: (Num a) => [[a]] -> Int -> (a, M.Matrix a)
-getMinorPairs' (coeffs:rest) n = (coeffs !! n, M.fromLists $ excludeColumn' n rest)
+getMinorPair' :: [[a]] -> Int -> (a, M.Matrix a)
+getMinorPair' (coeffs:rest) n = (coeffs !! n, M.fromLists $ excludeColumn' n rest)
 
 
 excludeColumn :: Int -> M.Matrix a -> M.Matrix a
@@ -59,22 +68,33 @@ excludeIndex excludeIndex xs = snd $ foldr
    (length xs - 1, [])
    xs
 
---determinant :: (Num a) => [[a]] -> a
---determinant xs = determinant' (M.fromLists xs)
+determinant :: (Num a) => M.Matrix a -> a
+determinant m
+   | M.nrows m == 0 && M.ncols m == 0 = error "empty matrix"
+   | M.nrows m == 2 && M.ncols m == 2 = (M.getElem 1 1 m) * (M.getElem 2 2 m) - (M.getElem 1 2 m) * (M.getElem 2 1 m)
+   | otherwise = determinant' m
 
---determinant' :: (Num a) => Matrix a -> a
---determinant' m
---   | nrows m == 0 && ncols m == 0 = error "empty matrix"
---   |
+determinant' :: (Num a) => M.Matrix a -> a
+determinant' m =
+   let minorPairs = getMinorPair m
+       alternatingSigns = (concat $ repeat [(+), (-)]) :: Num a => [a -> a -> a]
+   in
+      foldr
+         (\ (sign, (coeff, matrix)) acc -> sign acc (coeff * determinant matrix))
+         0
+         zip alternatingSigns minorPairs
+
+
+
 
 --bad
 --determinant [] = error "empty matrix"
 --determinant [[x]] =
 
-displayMatrixMinors matrix = do
-   let xs = getMinorPairs matrix
+displayMinorPairs matrix = do
+   let xs = getMinorPair matrix
    mapM_ putStrLn $ map (\(i, subm) -> ((show i) ++ " \n| \n" ++ (M.prettyMatrix subm) ++ "|\n")) xs
 
-main = displayMatrixMinors m
+main = displayMinorPairs m
 
 
