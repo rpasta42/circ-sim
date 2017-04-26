@@ -77,10 +77,10 @@ determinant m
 determinant' :: (Num a) => M.Matrix a -> a
 determinant' m =
    let minorPairs = getMinorPair m
-       alternatingSigns = concat $ repeat ['m', 'p']
+       alternatingSigns = concat $ repeat [(+), (-)]
    in
-      foldr
-         (\ (sign, (coeff, matrix)) acc -> ((if sign == 'p' then (+) else (-)) acc (coeff * determinant matrix)))
+      foldl
+         (\ acc (sign, (coeff, matrix)) -> (sign acc (coeff * determinant matrix)))
          0
          (zip alternatingSigns minorPairs)
 
