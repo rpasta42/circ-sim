@@ -1,3 +1,7 @@
+module Math
+( determinant
+) where
+
 import qualified Data.Matrix as M
 import Data.List (concat)
 
@@ -19,9 +23,7 @@ ncols = 3
 
 --data Matrix a = ListMatrix [[a]]
 
-
-
-lst = [[1, 5, 3], [4, 5, 6], [7, 8, 9]]
+--lst = [[1, 5, 3], [4, 5, 6], [7, 8, 9]]
 
 {-|
 lst = [
@@ -30,6 +32,13 @@ lst = [
    ['i', 'j', 'k', 'l'],
    ['m', 'n', 'o', 'p']]
 -}
+
+lst = [
+   [3, 5, 8, 9],
+   [1, 3, 2, 45],
+   [4, 3, 2, 1],
+   [9, 5, 4, 2]]
+
 
 m = M.fromLists lst
 
@@ -85,16 +94,10 @@ determinant' m =
          (zip alternatingSigns minorPairs)
 
 
-
-
---bad
---determinant [] = error "empty matrix"
---determinant [[x]] =
-
 displayMinorPairs matrix = do
    let xs = getMinorPair matrix
    mapM_ putStrLn $ map (\(i, subm) -> ((show i) ++ " \n| \n" ++ (M.prettyMatrix subm) ++ "|\n")) xs
 
-main = displayMinorPairs m
+main_1 = displayMinorPairs m
 
 
