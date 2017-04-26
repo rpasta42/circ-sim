@@ -37,8 +37,8 @@ M.getElem 2 3 m
 
 --pair of minor matrices and coefficients
 getMinorPairs :: (Num a) => M.Matrix a -> [(a, M.Matrix a)]
-getMinorPairs m = map (\(index, m) -> getMinorPairs' m index) (zip [0..] (repeat (M.toLists m)))
-
+getMinorPairs m = map (\index -> getMinorPairs' lstM index) [0..M.ncols m-1]
+   where lstM = M.toLists m
 
 getMinorPairs' :: (Num a) => [[a]] -> Int -> (a, M.Matrix a)
 getMinorPairs' (coeffs:rest) n = (coeffs !! n, M.fromLists $ excludeColumn' n rest)
