@@ -1,12 +1,28 @@
+module Circuit
+( Terminal(Terminal, TerminalByName)
+, CircuitElement(CircuitElement, circuitElementName, element, terminal1, terminal2)
+, DrawData(DrawData, positions)
+, Circuit(Circuit, elements)
+, newTerminal, newCircuit, newDrawData, newCircuitElement
+, newWire, newVoltageSource, newCurrentSource, newResistor
+, addCircuitElement, addTerminal, addTerminalByName
+, connectElements, connectElementsByName
+) where
+
 import Types
 import Data.List
 
 
-data Terminal a = Terminal { terminals :: [String] }
+data Terminal a = Terminal { terminals :: [CircuitElement a] }
+                | TerminalByName { terminalNames :: [String] }
 
 instance Show (Terminal a) where
    show (Terminal []) = "none"
-   show (Terminal terminals) = "none" -- intercalate "\n, " $ map circuitElementName terminals
+   show (Terminal terminals) = intercalate "\n, " $ map circuitElementName terminals
+
+   show (TerminalByName []) = "none"
+   show (TerminalByName terminals) = intercalate "\n, " $ terminals
+
 
 --later can add thickness/etc
 data Wire a = Wire deriving (Show)
@@ -16,7 +32,6 @@ data EnergySource a = VoltageSource { voltage :: a }
                       deriving (Show)
 
 data Resistor a = Resistor { resistance :: a } deriving (Show)
-
 
 data Element a = EnergySourceElement { source :: EnergySource a }
                | ResistorElement { resistor :: Resistor a }
@@ -29,17 +44,14 @@ data CircuitElement a = CircuitElement { circuitElementName :: String
                                        , terminal2 :: Terminal a
                                        } deriving (Show)
 
-
 --data used for drawing. later can add description,
 --color, size, rotation, etc
 data DrawData a = DrawData { positions :: [Point a]
                            } deriving (Show)
 
-
 --a: unit for electric data, b: unit for location
 data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)]
                            } deriving (Show)
-
 
 -- constructor functions
 
@@ -74,26 +86,44 @@ addCircuitElement (Circuit {elements=elems}) elem =
 
 
 addTerminal :: Terminal a -> CircuitElement a -> Terminal a
-addTerminal terminal element = Terminal ((circuitElementName element) : (terminals terminal))
+addTerminal terminal element = Terminal (element : (terminals terminal))
 
 addTerminalByName :: Terminal a -> String -> Terminal a
-addTerminalByName terminal elementName = Terminal (elementName : (terminals terminal))
-
+addTerminalByName terminal elementName = TerminalByName $ elementName : (terminalNames terminal)
 
 --idea: circuit is a dictionary String -> CircuitElement
-
 
 --connectElements a b aTerm bTerm
 --aTerm/bTerm is Int which is either 1 or 2
 
-connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
-
 --connectElements (CircuitElement {circuitElementName=nameA, element=elA, terminal1=t1A, terminal2=t2A})
 --                (CircuitElement {circuitElementName=nameB, element=elB, terminal1=t1B, terminal2=t2B})
 
+connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
 connectElements (CircuitElement nameA elA t1A t2A)
                 (CircuitElement nameB elB t1B t2B)
                 aTerm bTerm =
+   connectElements' aTerm bTerm
+      where connectElements' 1 1 =
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
+               in (a, b)
+            connectElements' 2 2 =
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 1 2 =
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 2 1 =
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
+               in (a, b)
+
+connectElementsByName (CircuitElement nameA elA t1A t2A)
+                      (CircuitElement nameB elB t1B t2B)
+                      aTerm bTerm =
    connectElements' aTerm bTerm
       where connectElements' 1 1 =
                let a = (CircuitElement nameA elA (addTerminalByName t1A nameB) t2A)
@@ -111,7 +141,6 @@ connectElements (CircuitElement nameA elA t1A t2A)
                let a = (CircuitElement nameA elA t1A (addTerminalByName t2A nameB))
                    b = (CircuitElement nameB elB (addTerminalByName t1B nameA) t2B)
                in (a, b)
-            connectElements' _ _ = error "bad aTerm and bTerm numbers"
 
 
 
