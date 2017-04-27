@@ -1,7 +1,10 @@
 import Types
 
 
-data Terminal a = Terminal { terminals :: [CircuitElement a] } deriving (Show)
+data Terminal a = Terminal { terminals :: [CircuitElement a] }
+
+instance Show (Terminal a) where
+   show (Terminal terminals) = concat $ map circuitElementName terminals
 
 --later can add thickness/etc
 data Wire a = Wire deriving (Show)
@@ -18,7 +21,8 @@ data Element a = EnergySourceElement { source :: EnergySource a }
                | WireElement { wire :: Wire a }
                  deriving (Show)
 
-data CircuitElement a = CircuitElement { element :: Element a
+data CircuitElement a = CircuitElement { circuitElementName :: String
+                                       , element :: Element a
                                        , terminal1 :: Terminal a
                                        , terminal2 :: Terminal a
                                        } deriving (Show)
@@ -77,7 +81,7 @@ addTerminal terminal element = Terminal (element : (terminals terminal))
 
 connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
 
-connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+{-| connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
                 (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
                  1 1 =
    let a = (CircuitElement elA (addTerminal t1A b) t2A)
@@ -104,6 +108,29 @@ connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
    let a = (CircuitElement elA t1A (addTerminal t2A b))
        b = (CircuitElement elB (addTerminal t1B a) t2B)
    in (a, b)
+-}
+
+connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+                aTerm bTerm =
+   connectElements' aTerm bTerm
+      where connectElements' 1 1 =
+               let a = (CircuitElement elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement elB (addTerminal t1B a) t2B)
+               in (a, b)
+            connectElements' 2 2 =
+               let a = (CircuitElement elA t1A (addTerminal t2A b))
+                   b = (CircuitElement elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 1 2 =
+               let a = (CircuitElement elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 2 1 =
+               let a = (CircuitElement elA t1A (addTerminal t2A b))
+                   b = (CircuitElement elB (addTerminal t1B a) t2B)
+               in (a, b)
+
 
 
 {-|
@@ -118,7 +145,9 @@ let negativeWire = newWire
 let resistor = newResistor 2
 
 let (battery, positiveWire) = connectElements battery positiveWire 1 1
-let (po
+let (resistor, positiveWire) = connectElements resistor positiveWire 1 2
+let (resistor, negativeWire) = connectElements resistor negativeWire 2 1
+let (battery, negativeWire) = connectElements battery negativeWire 2 2
 
 
 --let battery = EnergySourceElement (VoltageSource 5)
