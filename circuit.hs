@@ -66,6 +66,9 @@ addCircuitElement (Circuit {elements=elems}) elem =
    Circuit $ (elem, newDrawData) : elems
 
 
+addTerminal :: Terminal a -> CircuitElement a -> Terminal a
+addTerminal terminal element = Terminal (element : (terminals terminal))
+
 --idea: circuit is a dictionary String -> CircuitElement
 
 
@@ -73,14 +76,34 @@ addCircuitElement (Circuit {elements=elems}) elem =
 --aTerm/bTerm is Int which is either 1 or 2
 
 connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
+
 connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
                 (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
                  1 1 =
-   let a = (CircuitElement elA (Terminal (b : (terminals t1A))) t2A)
-       b = (CircuitElement elB (Terminal (a : (terminals t1B))) t2B)
-   in
-      (a, b)
+   let a = (CircuitElement elA (addTerminal t1A b) t2A)
+       b = (CircuitElement elB (addTerminal t1B a) t2B)
+   in (a, b)
 
+connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+                 2 2 =
+   let a = (CircuitElement elA t1A (addTerminal t2A b))
+       b = (CircuitElement elB t1B (addTerminal t2B a))
+   in (a, b)
+
+connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+                 1 2 =
+   let a = (CircuitElement elA (addTerminal t1A b) t2A)
+       b = (CircuitElement elB t1B (addTerminal t2B a))
+   in (a, b)
+
+connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+                 2 1 =
+   let a = (CircuitElement elA t1A (addTerminal t2A b))
+       b = (CircuitElement elB (addTerminal t1B a) t2B)
+   in (a, b)
 
 
 {-|
@@ -94,6 +117,8 @@ let negativeWire = newWire
 
 let resistor = newResistor 2
 
+let (battery, positiveWire) = connectElements battery positiveWire 1 1
+let (po
 
 
 --let battery = EnergySourceElement (VoltageSource 5)
