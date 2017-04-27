@@ -5,7 +5,7 @@ module Circuit
 , Circuit(Circuit, elements)
 , newTerminal, newCircuit, newDrawData, newCircuitElement
 , newWire, newVoltageSource, newCurrentSource, newResistor
-, addCircuitElement, addTerminal, addTerminalByName
+, addCircuitElement, addCircuitElements, addTerminal, addTerminalByName
 , connectElements, connectElementsByName
 ) where
 
@@ -84,6 +84,9 @@ addCircuitElement :: (Num b, Num a) => Circuit a b -> CircuitElement a -> Circui
 addCircuitElement (Circuit {elements=elems}) elem =
    Circuit $ (elem, newDrawData) : elems
 
+addCircuitElements :: (Num b, Num a) => Circuit a b -> [CircuitElement a] -> Circuit a b
+addCircuitElements c [] = c
+addCircuitElements c (x:xs) = addCircuitElements (addCircuitElement c x) xs
 
 addTerminal :: Terminal a -> CircuitElement a -> Terminal a
 addTerminal terminal element = Terminal (element : (terminals terminal))
@@ -155,10 +158,13 @@ let negativeWire = newWire
 
 let resistor = newResistor 2
 
-let (battery, positiveWire) = connectElements battery positiveWire 1 1
-let (resistor, positiveWire) = connectElements resistor positiveWire 1 2
-let (resistor, negativeWire) = connectElements resistor negativeWire 2 1
-let (battery, negativeWire) = connectElements battery negativeWire 2 2
+let (battery2, positiveWire2) = connectElements battery positiveWire 1 1
+let (resistor2, positiveWire3) = connectElements resistor positiveWire2 1 2
+let (resistor3, negativeWire2) = connectElements resistor2 negativeWire 2 1
+let (battery3, negativeWire3) = connectElements battery2 negativeWire2 2 2
+
+let addToC = addCircuitElement
+let circuit2 =  addToC addToC (addToC (addToC circuit battery) positiveWire) negativeWire
 
 
 --let battery = EnergySourceElement (VoltageSource 5)
