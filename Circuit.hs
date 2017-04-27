@@ -5,6 +5,7 @@ module Circuit
 , Circuit(Circuit, elements)
 , newTerminal, newCircuit, newDrawData, newCircuitElement
 , newWire, newVoltageSource, newCurrentSource, newResistor
+, newWireNamed, newVoltageSourceNamed, newCurrentSourceNamed, newResistorNamed
 , addCircuitElement, addCircuitElements, addTerminal, addTerminalByName
 , connectElements, connectElementsByName
 ) where
@@ -67,17 +68,22 @@ newDrawData = DrawData {positions = [Point 0 0]}
 newCircuitElement :: String -> Element a -> CircuitElement a
 newCircuitElement name e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal, circuitElementName=name}
 
-newWire :: CircuitElement a
-newWire = newCircuitElement "wire" $ WireElement $ Wire
 
-newVoltageSource :: a -> CircuitElement a
-newVoltageSource v = newCircuitElement "v-source" . EnergySourceElement . VoltageSource $ v
+newWire :: String -> CircuitElement a
+newWire name = newCircuitElement name $ WireElement $ Wire
+newWireNamed = newWire "wire"
 
-newCurrentSource :: a -> CircuitElement a
-newCurrentSource i = newCircuitElement "c-source" $ EnergySourceElement $ CurrentSource i
+newVoltageSource :: String -> a -> CircuitElement a
+newVoltageSource name v = newCircuitElement name . EnergySourceElement . VoltageSource $ v
+newVoltageSourceNamed = newVoltageSource "v-source"
 
-newResistor :: a -> CircuitElement a
-newResistor r = newCircuitElement "r-source" $ ResistorElement $ Resistor r
+newCurrentSource :: String -> a -> CircuitElement a
+newCurrentSource name i = newCircuitElement name $ EnergySourceElement $ CurrentSource i
+newCurrentSourceNamed = newCurrentSource "c-source"
+
+newResistor :: String -> a -> CircuitElement a
+newResistor name r = newCircuitElement name $ ResistorElement $ Resistor r
+newResistorNamed = newResistor "resistor"
 
 --new CircuitElement in Circuit
 addCircuitElement :: (Num b, Num a) => Circuit a b -> CircuitElement a -> Circuit a b
@@ -146,30 +152,5 @@ connectElementsByName (CircuitElement nameA elA t1A t2A)
                in (a, b)
 
 
-
-{-|
-
-let circuit = newCircuit
-
-let battery = newVoltageSource 10
-
-let positiveWire = newWire
-let negativeWire = newWire
-
-let resistor = newResistor 2
-
-let (battery2, positiveWire2) = connectElements battery positiveWire 1 1
-let (resistor2, positiveWire3) = connectElements resistor positiveWire2 1 2
-let (resistor3, negativeWire2) = connectElements resistor2 negativeWire 2 1
-let (battery3, negativeWire3) = connectElements battery2 negativeWire2 2 2
-
-let addToC = addCircuitElement
-let circuit2 =  addToC addToC (addToC (addToC circuit battery) positiveWire) negativeWire
-
-
---let battery = EnergySourceElement (VoltageSource 5)
---let resistor = ResistorElement $ Resistor 5
---let wire_pos = WireElement {terminal1=battery, terminal2=resistor}
--}
 
 
