@@ -1,5 +1,10 @@
 
 
+data Terminal a = Terminal { terminals :: [Element a] }
+
+data Wire a = Wire
+
+
 data EnergySource a = VoltageSource { voltage :: a }
                     | CurrentSource { current :: a }
                       deriving (Show)
@@ -9,10 +14,8 @@ data Resistor a = Resistor { resistance :: a } deriving (Show)
 
 data Element a = EnergySourceElement { source :: EnergySource a }
                | ResistorElement { resistor :: Resistor a }
-               | WireElement { terminal1 :: Element a
-                             , terminal2 :: Element a
-                             }
-               | ConnectorElement { terminals :: [Element a] }
+               | WireElement { wire :: Wire a }
+               | TerminalElement { terminals :: [Element a] }
                  deriving (Show)
 
 
