@@ -39,10 +39,15 @@ newCircuit :: Circuit a b
 newCircuit = Circuit { elements = [] }
 
 newDrawData :: (Num a) => DrawData a
-newDrawData = DrawData {positions = [Point {posX=0,posY=0}]}
+newDrawData = DrawData {positions = [Point 0 0]}
 
-addElement :: (Num b) => Circuit a b -> CircuitElement a -> Circuit a b
-addElement (Circuit {elements=elems}) elem = Circuit $ (elem, newDrawData) : elems
+addCircuitElement :: (Num b, Num a) => Circuit a b -> CircuitElement a -> Circuit a b
+addCircuitElement (Circuit {elements=elems}) elem =
+   Circuit $ (elem, newDrawData) : elems
+
+
+
+
 
 {-|
 let battery = EnergySourceElement (VoltageSource 5)
