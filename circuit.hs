@@ -1,10 +1,12 @@
 import Types
+import Data.List
 
 
 data Terminal a = Terminal { terminals :: [CircuitElement a] }
 
 instance Show (Terminal a) where
-   show (Terminal terminals) = concat $ map circuitElementName terminals
+   show (Terminal []) = "none"
+   show (Terminal terminals) = "none" -- intercalate "\n, " $ map circuitElementName terminals
 
 --later can add thickness/etc
 data Wire a = Wire deriving (Show)
@@ -35,7 +37,8 @@ data DrawData a = DrawData { positions :: [Point a]
 
 
 --a: unit for electric data, b: unit for location
-data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)] }
+data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)]
+                           } deriving (Show)
 
 
 -- constructor functions
@@ -49,22 +52,22 @@ newCircuit = Circuit { elements = [] }
 newDrawData :: (Num a) => DrawData a
 newDrawData = DrawData {positions = [Point 0 0]}
 
-newCircuitElement :: Element a -> CircuitElement a
-newCircuitElement e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal, circuitElementName=""}
+newCircuitElement :: String -> Element a -> CircuitElement a
+newCircuitElement name e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal, circuitElementName=name}
 
 newWire :: CircuitElement a
-newWire = newCircuitElement . WireElement $ Wire
+newWire = newCircuitElement "wire" $ WireElement $ Wire
 
 newVoltageSource :: a -> CircuitElement a
-newVoltageSource v = newCircuitElement . EnergySourceElement . VoltageSource $ v
+newVoltageSource v = newCircuitElement "v-source" . EnergySourceElement . VoltageSource $ v
 
 newCurrentSource :: a -> CircuitElement a
-newCurrentSource i = newCircuitElement . EnergySourceElement $ CurrentSource i
+newCurrentSource i = newCircuitElement "c-source" $ EnergySourceElement $ CurrentSource i
 
 newResistor :: a -> CircuitElement a
-newResistor r = newCircuitElement . ResistorElement $ Resistor r
+newResistor r = newCircuitElement "r-source" $ ResistorElement $ Resistor r
 
-
+--new CircuitElement in Circuit
 addCircuitElement :: (Num b, Num a) => Circuit a b -> CircuitElement a -> Circuit a b
 addCircuitElement (Circuit {elements=elems}) elem =
    Circuit $ (elem, newDrawData) : elems
