@@ -1,9 +1,8 @@
-
+import Types
 
 data Terminal a = Terminal { terminals :: [Element a] }
 
-data Wire a = Wire
-
+data Wire a = Wire deriving (Show)
 
 data EnergySource a = VoltageSource { voltage :: a }
                     | CurrentSource { current :: a }
@@ -15,18 +14,21 @@ data Resistor a = Resistor { resistance :: a } deriving (Show)
 data Element a = EnergySourceElement { source :: EnergySource a }
                | ResistorElement { resistor :: Resistor a }
                | WireElement { wire :: Wire a }
-               | TerminalElement { terminals :: [Element a] }
                  deriving (Show)
 
+data CircuitElement a = CircuitElement { element :: Element a
+                                       , terminal1 :: Terminal a
+                                       , terminal2 :: Terminal a
+                                       } deriving (Show)
 
-data Point a = Point { posX :: a, posY :: a }
-               deriving (Show)
 
 --a: unit for resistance, b: unit for location
 data ElementDrawData a b = DrawData { positions :: [Point b]
-                                    , circuitElemnt :: Element a
+                                    , circuitElemnt :: CircuitElement a
                                     } deriving (Show)
 
+
+data Circuit a b = Circuit { elements :: [(CircuitElement a, ElementDrawData b)] }
 
 {-|
 let battery = EnergySourceElement (VoltageSource 5)
