@@ -1,7 +1,10 @@
 import Types
 
-data Terminal a = Terminal { terminals :: [Element a] }
 
+data Terminal a = Terminal { terminals :: [Element a] } deriving (Show)
+
+
+--later can add thickness/etc
 data Wire a = Wire deriving (Show)
 
 data EnergySource a = VoltageSource { voltage :: a }
@@ -22,13 +25,24 @@ data CircuitElement a = CircuitElement { element :: Element a
                                        } deriving (Show)
 
 
---a: unit for resistance, b: unit for location
-data ElementDrawData a b = DrawData { positions :: [Point b]
-                                    , circuitElemnt :: CircuitElement a
-                                    } deriving (Show)
+--data used for drawing. later can add description,
+--color, size, rotation, etc
+data DrawData a = DrawData { positions :: [Point a]
+                           } deriving (Show)
 
 
-data Circuit a b = Circuit { elements :: [(CircuitElement a, ElementDrawData b)] }
+--a: unit for electric data, b: unit for location
+data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)] }
+
+
+newCircuit :: Circuit a b
+newCircuit = Circuit { elements = [] }
+
+newDrawData :: drawData a
+newDrawData = DrawData {positions = [Point {posX=0, posY=0}]}
+
+addElement :: Circuit a b -> CircuitElement a -> Circuit a b
+addElement (Circuit {elements=elems}) elem = Circuit $ (elem, newDrawData) : elems
 
 {-|
 let battery = EnergySourceElement (VoltageSource 5)

@@ -1,5 +1,5 @@
 module Types
-( Point
+( Point(Point, posX, posY)
 ) where
 
 data Point a = Point { posX :: a
