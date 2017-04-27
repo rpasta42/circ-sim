@@ -2,7 +2,7 @@ import Types
 import Data.List
 
 
-data Terminal a = Terminal { terminals :: [CircuitElement a] }
+data Terminal a = Terminal { terminals :: [String] }
 
 instance Show (Terminal a) where
    show (Terminal []) = "none"
@@ -74,7 +74,11 @@ addCircuitElement (Circuit {elements=elems}) elem =
 
 
 addTerminal :: Terminal a -> CircuitElement a -> Terminal a
-addTerminal terminal element = Terminal (element : (terminals terminal))
+addTerminal terminal element = Terminal ((circuitElementName element) : (terminals terminal))
+
+addTerminalByName :: Terminal a -> String -> Terminal a
+addTerminalByName terminal elementName = Terminal (elementName : (terminals terminal))
+
 
 --idea: circuit is a dictionary String -> CircuitElement
 
@@ -92,21 +96,22 @@ connectElements (CircuitElement nameA elA t1A t2A)
                 aTerm bTerm =
    connectElements' aTerm bTerm
       where connectElements' 1 1 =
-               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
-                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
+               let a = (CircuitElement nameA elA (addTerminalByName t1A nameB) t2A)
+                   b = (CircuitElement nameB elB (addTerminalByName t1B nameA) t2B)
                in (a, b)
             connectElements' 2 2 =
-               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
-                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
+               let a = (CircuitElement nameA elA t1A (addTerminalByName t2A nameB))
+                   b = (CircuitElement nameB elB t1B (addTerminalByName t2B nameA))
                in (a, b)
             connectElements' 1 2 =
-               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
-                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
+               let a = (CircuitElement nameA elA (addTerminalByName t1A nameB) t2A)
+                   b = (CircuitElement nameB elB t1B (addTerminalByName t2B nameA))
                in (a, b)
             connectElements' 2 1 =
-               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
-                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
+               let a = (CircuitElement nameA elA t1A (addTerminalByName t2A nameB))
+                   b = (CircuitElement nameB elB (addTerminalByName t1B nameA) t2B)
                in (a, b)
+            connectElements' _ _ = error "bad aTerm and bTerm numbers"
 
 
 
