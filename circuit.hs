@@ -38,10 +38,10 @@ data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)] }
 newCircuit :: Circuit a b
 newCircuit = Circuit { elements = [] }
 
-newDrawData :: drawData a
-newDrawData = DrawData {positions = [Point {posX=0, posY=0}]}
+newDrawData :: (Num a) => DrawData a
+newDrawData = DrawData {positions = [Point {posX=0,posY=0}]}
 
-addElement :: Circuit a b -> CircuitElement a -> Circuit a b
+addElement :: (Num b) => Circuit a b -> CircuitElement a -> Circuit a b
 addElement (Circuit {elements=elems}) elem = Circuit $ (elem, newDrawData) : elems
 
 {-|
