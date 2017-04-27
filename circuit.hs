@@ -1,8 +1,7 @@
 import Types
 
 
-data Terminal a = Terminal { terminals :: [Element a] } deriving (Show)
-
+data Terminal a = Terminal { terminals :: [CircuitElement a] } deriving (Show)
 
 --later can add thickness/etc
 data Wire a = Wire deriving (Show)
@@ -35,26 +34,71 @@ data DrawData a = DrawData { positions :: [Point a]
 data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)] }
 
 
+-- constructor functions
+
+newTerminal :: Terminal a
+newTerminal = Terminal { terminals = [] }
+
 newCircuit :: Circuit a b
 newCircuit = Circuit { elements = [] }
 
 newDrawData :: (Num a) => DrawData a
 newDrawData = DrawData {positions = [Point 0 0]}
 
+newCircuitElement :: Element a -> CircuitElement a
+newCircuitElement e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal}
+
+newWire :: CircuitElement a
+newWire = newCircuitElement . WireElement $ Wire
+
+newVoltageSource :: a -> CircuitElement a
+newVoltageSource v = newCircuitElement . EnergySourceElement . VoltageSource $ v
+
+newCurrentSource :: a -> CircuitElement a
+newCurrentSource i = newCircuitElement . EnergySourceElement $ CurrentSource i
+
+newResistor :: a -> CircuitElement a
+newResistor r = newCircuitElement . ResistorElement $ Resistor r
+
+
 addCircuitElement :: (Num b, Num a) => Circuit a b -> CircuitElement a -> Circuit a b
 addCircuitElement (Circuit {elements=elems}) elem =
    Circuit $ (elem, newDrawData) : elems
 
 
+--idea: circuit is a dictionary String -> CircuitElement
+
+
+--connectElements a b aTerm bTerm
+--aTerm/bTerm is Int which is either 1 or 2
+
+connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
+connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
+                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+                 1 1 =
+   let a = (CircuitElement elA (Terminal (b : (terminals t1A))) t2A)
+       b = (CircuitElement elB (Terminal (a : (terminals t1B))) t2B)
+   in
+      (a, b)
 
 
 
 {-|
-let battery = EnergySourceElement (VoltageSource 5)
-let resistor = ResistorElement $ Resistor 5
 
-let wire_pos = WireElement {terminal1=battery, terminal2=resistor}
+let circuit = newCircuit
 
+let battery = newVoltageSource 10
+
+let positiveWire = newWire
+let negativeWire = newWire
+
+let resistor = newResistor 2
+
+
+
+--let battery = EnergySourceElement (VoltageSource 5)
+--let resistor = ResistorElement $ Resistor 5
+--let wire_pos = WireElement {terminal1=battery, terminal2=resistor}
 -}
 
 
