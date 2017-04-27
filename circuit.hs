@@ -50,7 +50,7 @@ newDrawData :: (Num a) => DrawData a
 newDrawData = DrawData {positions = [Point 0 0]}
 
 newCircuitElement :: Element a -> CircuitElement a
-newCircuitElement e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal}
+newCircuitElement e = CircuitElement {element=e, terminal1=newTerminal, terminal2=newTerminal, circuitElementName=""}
 
 newWire :: CircuitElement a
 newWire = newCircuitElement . WireElement $ Wire
@@ -81,54 +81,28 @@ addTerminal terminal element = Terminal (element : (terminals terminal))
 
 connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
 
-{-| connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
-                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
-                 1 1 =
-   let a = (CircuitElement elA (addTerminal t1A b) t2A)
-       b = (CircuitElement elB (addTerminal t1B a) t2B)
-   in (a, b)
+--connectElements (CircuitElement {circuitElementName=nameA, element=elA, terminal1=t1A, terminal2=t2A})
+--                (CircuitElement {circuitElementName=nameB, element=elB, terminal1=t1B, terminal2=t2B})
 
-connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
-                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
-                 2 2 =
-   let a = (CircuitElement elA t1A (addTerminal t2A b))
-       b = (CircuitElement elB t1B (addTerminal t2B a))
-   in (a, b)
-
-connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
-                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
-                 1 2 =
-   let a = (CircuitElement elA (addTerminal t1A b) t2A)
-       b = (CircuitElement elB t1B (addTerminal t2B a))
-   in (a, b)
-
-connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
-                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
-                 2 1 =
-   let a = (CircuitElement elA t1A (addTerminal t2A b))
-       b = (CircuitElement elB (addTerminal t1B a) t2B)
-   in (a, b)
--}
-
-connectElements (CircuitElement {element=elA, terminal1=t1A, terminal2=t2A})
-                (CircuitElement {element=elB, terminal1=t1B, terminal2=t2B})
+connectElements (CircuitElement nameA elA t1A t2A)
+                (CircuitElement nameB elB t1B t2B)
                 aTerm bTerm =
    connectElements' aTerm bTerm
       where connectElements' 1 1 =
-               let a = (CircuitElement elA (addTerminal t1A b) t2A)
-                   b = (CircuitElement elB (addTerminal t1B a) t2B)
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
                in (a, b)
             connectElements' 2 2 =
-               let a = (CircuitElement elA t1A (addTerminal t2A b))
-                   b = (CircuitElement elB t1B (addTerminal t2B a))
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
                in (a, b)
             connectElements' 1 2 =
-               let a = (CircuitElement elA (addTerminal t1A b) t2A)
-                   b = (CircuitElement elB t1B (addTerminal t2B a))
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = (CircuitElement nameB elB t1B (addTerminal t2B a))
                in (a, b)
             connectElements' 2 1 =
-               let a = (CircuitElement elA t1A (addTerminal t2A b))
-                   b = (CircuitElement elB (addTerminal t1B a) t2B)
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
                in (a, b)
 
 
