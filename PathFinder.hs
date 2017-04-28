@@ -112,13 +112,40 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
 
 --pathStepList result from findPath. this contains every step
 --getShortestPath returns shortest path
+
+{-|
 getShortestPath [] = []
-getShortestPath (x:xs) =
+getShortestPath pathStepList@(x:xs) =
    let maxStep@(_, _, maxStepZ) =
          foldr (\currStep@(x, y, currZ) accStep@(_, _, accZ) -> if currZ > accZ then currStep else accStep)
                x
                xs
    in maxStep : getShortestPath (filter (\(_, _, z_) -> z_ /= maxStepZ) xs)
+-}
+
+getShortestPath pathStepList = getShortestPath' [] pathStepList
+
+getShortestPath' [] [] = []
+getShortestPath' [] pathStepList@(x:xs) =
+   let maxStep@(_, _, maxStepZ) =
+         foldr (\currStep@(x, y, currZ) accStep@(_, _, accZ) -> if currZ > accZ then currStep else accStep)
+               x
+               xs
+   in getShortestPath' [maxStep] $ filter (\(_, _, z_) -> z_ /= maxStepZ) pathStepList
+
+getShortestPath' accSteps@(accPrev:accRest) [] = accSteps
+getShortestPath' accSteps@((accPrev@(prevX,prevY,prevZ)):accRest) pathStepList =
+   let currStep@(_, _, currZ) =
+         foldr (\foldStep@(foldX, foldY, foldZ) foldAcc ->
+                  if foldZ+1 == prevZ && (abs $ foldX-prevX) <= 1 && (abs $ foldY-prevY) <= 1
+                  then foldStep
+                  else foldAcc)
+               accPrev
+               pathStepList
+   in if currZ <= 0
+      then accSteps
+      else getShortestPath' (currStep : accSteps) $ filter (\(_,_,z_) -> z_ < currZ) pathStepList
+
 
 ------
 
@@ -151,9 +178,13 @@ allPathsStepMatrix = displayMatrixMapPaths getTileMap (extractEither allPathsSte
 shortestPathsStepMatrix = displayMatrixMapPaths getTileMap shortestPathsStepList
 originalMatrixMap = M.fromLists getTileMap --original map
 
-main = do print allPathsStepList
+main = do print "Path list:"
+          print allPathsStepList
+          print "all steps matrix:"
           print allPathsStepMatrix
+          print "shortest path map:"
           print shortestPathsStepMatrix
+          print "original map:"
           print originalMatrixMap
           return 0
 
