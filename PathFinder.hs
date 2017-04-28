@@ -1,6 +1,6 @@
 import Data.List
 import qualified Data.Matrix as M
-import Data.Char (intToDigit)
+import Data.Char (intToDigit, chr, ord)
 
 type TileMatrix a = M.Matrix a
 type TileMap a = [[a]]
@@ -110,26 +110,49 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
                in (x < 0 || y < 0 || x > (M.ncols tileMap - 1) || y > (M.ncols tileMap - 1) ||
                   (tileContents == fullTile) || (not $ tileContents `elem` nonFullTile))
 
+--pathStepList result from findPath. this contains every step
+--getShortestPath returns shortest path
+getShortestPath [] = Right "bad path"
+getShortestPath (x:xs) = Left $
+   foldr
+      (\currStep@(x, y, currZ) accStep@(_, _, accZ) -> if currZ > accZ then currStep else accStep)
+      (car x)
+      (cdr x)
 
-getMatrixMapPaths tileMap goodPath =
+------
+
+
+
+--Matrix with character of chr'd numbers for paths (to get step number, use ord (M.getElem x y map) (ord z) - 300)
+getMatrixMapChrPaths tileMap goodPath =
    let matrixMap = M.fromLists tileMap
-   in displayPaths' matrixMap goodPath
-      where displayPaths' mMap [] = mMap
-            displayPaths' mMap ((y,x,z):xs) = displayPaths' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
+   in helper' matrixMap goodPath
+      where helper' mMap [] = mMap
+            helper' mMap ((y,x,z):xs) = helper' (M.setElem (chr $ 300+z) (x+1, y+1) mMap) xs
 
 
-x = findPath getTileMap 's' 'o' '.' 'x'
+--Matrix with character digits of numbers for path
+getMatrixMapDisplayPaths tileMap goodPath =
+   let matrixMap = M.fromLists tileMap
+   in helper' matrixMap goodPath
+      where helper' mMap [] = mMap
+            helper' mMap ((y,x,z):xs) = helper' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
 
-extractEither (Left y) = y
-extractJust (Just y) = y
 
-y = getMatrixMapPaths getTileMap (extractEither x)
-z = M.fromLists getTileMap
+pathStepsList = findPath getTileMap 's' 'o' '.' 'x'
 
-main = do print x
-          print y
-          print z
+
+shortestPathStepsMatrix = getMatrixMapDisplayPaths getTileMap (extractEither pathStepsList)
+originalMatrixMap = M.fromLists getTileMap --original map
+
+main = do print pathStepsList
+          print shortestPathStepsMatrix
+          print originalMatrixMap
           return 0
 
 --findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
+
+
+extractEither (Left y) = y
+extractJust (Just y) = y
 
