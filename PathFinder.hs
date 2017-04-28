@@ -1,6 +1,9 @@
 import Data.List
+import qualified Data.Matrix as M
+
 
 type TileMap a = [[a]]
+type Coord = (Int, Int, Int)
 
 getTileMap :: TileMap Char
 getTileMap = [
@@ -16,19 +19,35 @@ getTileMap = [
    "xxxxxxxxxx"  --9
    ]
 
-findTileMap :: (Eq a) => a -> TileMap a -> Maybe (Int, Int, Int)
-findTileMap destChar tileMap = findTileMap' destChar tileMap 0
 
+findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
+findTile destChar tileMap = findTile' destChar tileMap 0
 
-findTileMap' :: (Eq a) => a -> TileMap a -> Int -> Maybe (Int, Int, Int)
-findTileMap' destChar [] _         = Nothing
-findTileMap' destChar (row:rows) y =
+findTile' :: (Eq a) => a -> TileMap a -> Int -> Maybe Coord
+findTile' destChar [] _         = Nothing
+findTile' destChar (row:rows) y =
    let indexMaybe = elemIndex destChar row
    in case indexMaybe of
-      Nothing -> findTileMap' destChar rows (y+1)
+      Nothing -> findTile' destChar rows (y+1)
       Just x -> Just (x, y, 0)
 
---findDest :: (Eq a) => TileMap -> a -> a -> a -> [Coord]
---findDest tileMap startChar endChar emptyChar fullChar
+
+--startChar = starting position, endChar = ending position,
+--emptyChar = empty path, fullChar = occupied
+findPath :: (Eq a) => TileMap a -> a -> a -> a -> Either [Coord] String
+findPath tileMap startChar endChar emptyChar fullChar =
+   let startPos = findTile startChar tileMap
+       endPos = findTile endChar tileMap
+   in case (startPos, endPos) of
+      (Nothing, _) => Right "No starting position"
+      (_, Nothing) => Right "No end position"
+      _ => findPath' tileMap startChar endChar emptyChar fullChar
+
+findPath' :: (Eq a) => TileMap a -> a -> a -> a -> Either [Coord] String
+findPath' tileMap startChar endChar emptyChar fullChar =
+
+
+
+
 
 
