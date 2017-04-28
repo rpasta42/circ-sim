@@ -58,11 +58,11 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                  else
                      let adjacent = findAdjacent tileMap
                                                  (coords !! nextPosIndex)
-                                                 [emptyVal, startVal, endVal]
+                                                 [emptyVal , startVal] --, endVal]
                                                  fullVal
                          newCoords = coords ++ adjacent
                          isGoodWeight coord@(x, y, z) =
-                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z <= z_) then False else acc)
+                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z >= z_) then False else acc)
                                  True
                                  (delete coord newCoords)
                          goodCoords = (filter isGoodWeight newCoords)
