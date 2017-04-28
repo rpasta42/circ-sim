@@ -3,13 +3,45 @@
 --mkdir /tmp/notes_serv; sshfs root@69.164.203.126:/ /tmp/notes_serv
 
 import Graphics.UI.GLUT
+import Types
+import Circuit
 
-type GlVert = [(GLfloat, GLfloat, GLfloat)]
+type GlVerts = [(GLfloat, GLfloat, GLfloat)]
 
-getCirclePoints :: Float -> GlVert
+
+
+data Shape a = ShapeSquare { width :: a }
+             | ShapeRect { width :: a
+                         , height :: a
+                         }
+             | ShapeCircle { radius :: a
+                           , numVerts :: a
+                           }
+             | ShapeLine { start :: a
+                         , end :: a
+                         }
+
+
+data DrawObject a t = DrawObject { shape :: (Shape a)
+                                 , position :: Point a
+                                 , fillType :: t
+                                 , color :: String
+                                 , scale :: a
+                                 , label :: String
+                                 }
+
+
+--a = unit for electric data, b = unit for location
+--c = numeric unit for OpenGL, d = renderMode type
+drawCircuit :: Circuit a b -> [DrawObject c d]
+
+
+
+
+getCirclePoints :: Float -> GlVerts
 getCirclePoints n = [ (sin (2*pi*k/n), cos (2*pi*k/n), 0) | k <- [1..n] ]
 
-myPoints :: [(GLfloat, GLfloat, GLfloat)]
+myPoints :: GlVerts
 myPoints = getCirclePoints 100
 
 
