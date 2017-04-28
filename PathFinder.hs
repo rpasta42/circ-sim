@@ -51,9 +51,9 @@ findPath tileMap startTileVal endTileVal emptyTileVal fullTileVal =
 findPath' :: (Eq a) => TileMatrix a -> Coord -> Coord -> a -> a -> a -> a -> [Coord] -> Either [Coord] String
 findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoords = helper [endPos] 0
    where helper coords nextPosIndex =
-            if haveFinishCoord coords endPos
+            if haveFinishCoord coords startPos
             then Left coords
-            else if (allEmptyChecked coords emptyTileCoords)
+            else if (allEmptyChecked coords emptyTileCoords) -- || (nextPosIndex > 2)
                  then Right "No path"
                  else
                      let adjacent = findAdjacent tileMap
@@ -68,13 +68,16 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                          goodCoords = (filter isGoodWeight newCoords)
                      in helper goodCoords (nextPosIndex+1)
 
+
 haveFinishCoord coords endCoord@(x,y,_) =
    foldr (\(x_,y_,_) acc -> if x_ == x && y_ == y then True else acc)
          False
          coords
 
 --can do this based on number of empty and checked coords, don't need to check each one
-allEmptyChecked checkedCoords emptyCoords =
+allEmptyChecked checkedCoords emptyCoords = length checkedCoords >= length emptyCoords
+
+allEmptyChecked' checkedCoords emptyCoords =
    let isCoordInChecked coord@(x, y, _) =
          foldr (\(x_, y_, _) acc -> if x_ == x && y_ == y then True else acc)
                False
@@ -105,9 +108,11 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
       where isBad (x, y, _) =
                let tileContents = M.getElem (y+1) (x+1) tileMap
                in (x < 0 || y < 0 || x > (M.ncols tileMap - 1) || y > (M.ncols tileMap - 1) ||
-                  (tileContents == fullTile) || (tileContents `elem` nonFullTile))
+                  (tileContents == fullTile) || (not $ tileContents `elem` nonFullTile))
+
 
 
 x = findPath getTileMap 's' 'o' '.' 'x'
 
+--findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
 
