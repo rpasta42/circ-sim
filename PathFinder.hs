@@ -62,9 +62,9 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                                                  fullVal
                          newCoords = coords ++ adjacent
                          isGoodWeight coord@(x, y, z) =
-                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z >= z_) then False else acc)
+                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z > z_) then False else acc) --z >= z_
                                  True
-                                 (delete coord newCoords)
+                                 (delete coord coords) --newCoords)
                          goodCoords = (filter isGoodWeight newCoords)
                      in helper goodCoords (nextPosIndex+1)
 
@@ -111,12 +111,11 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
                   (tileContents == fullTile) || (not $ tileContents `elem` nonFullTile))
 
 
-displayPaths tileMap goodPath =
+getMatrixMapPaths tileMap goodPath =
    let matrixMap = M.fromLists tileMap
    in displayPaths' matrixMap goodPath
-
-displayPaths' mMap [] = mMap
-displayPaths' mMap ((y,x,z):xs) = displayPaths' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
+      where displayPaths' mMap [] = mMap
+            displayPaths' mMap ((y,x,z):xs) = displayPaths' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
 
 
 x = findPath getTileMap 's' 'o' '.' 'x'
@@ -124,10 +123,11 @@ x = findPath getTileMap 's' 'o' '.' 'x'
 extractEither (Left y) = y
 extractJust (Just y) = y
 
-y = displayPaths getTileMap (extractEither x)
+y = getMatrixMapPaths getTileMap (extractEither x)
 z = M.fromLists getTileMap
 
-main = do print y
+main = do print x
+          print y
           print z
           return 0
 
