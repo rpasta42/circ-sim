@@ -33,32 +33,39 @@ findTile' destChar (row:rows) y =
       Just x -> Just (x, y, 0)
 
 
---startChar = starting position, endChar = ending position,
---emptyChar = empty path, fullChar = occupied
-findPath :: (Eq a) => TileMap a -> a -> a -> a -> Either [Coord] String
-findPath tileMap startChar endChar emptyChar fullChar =
-   let startPos = findTile startChar tileMap
-       endPos = findTile endChar tileMap
-   in case (startPos, endPos) of
-      (Nothing, _) => Right "No starting position"
-      (_, Nothing) => Right "No end position"
-      _ => findPath' (M.fromLists tileMap) startChar endChar emptyChar fullChar
+--startTile = starting position, endTile = ending position,
+--emptyTile = empty path, fullTile = occupied
+findPath :: (Eq a) => TileMap a -> a -> a -> a -> a -> Either [Coord] String
+findPath tileMap startTile endTile emptyTile fullTile =
+   let startPosMaybe = findTile startTile tileMap
+       endPosMaybe = findTile endTile tileMap
+   in case (startPosMaybe, endPosMaybe) of
+      (Nothing, _) -> Right "No starting position"
+      (_, Nothing) -> Right "No end position"
+      (Just startPos, Just endPos) -> findPath' (M.fromLists tileMap) startPos endPos emptyTile fullTile
 
-findPath' :: (Eq a) => TileMatrix a -> a -> a -> a -> Either [Coord] String
-findPath' tileMap startChar endChar emptyChar fullChar =
+findPath' :: (Eq a) => TileMatrix a -> Coord -> Coord -> a -> a -> Either [Coord] String
+findPath' tileMap startPos endPos emptyTile fullTile =
+   Left $ findAdjacent tileMap endPos emptyTile fullTile
 
 
-findAdjacent' :: (Eq a) => TileMatrix a -> Coord -> [Coord]
-findAdjacent' tileMap adjacentTo@(x, y, z) emptyChar fullChar =
-   let topLeft = (x-1, y-1, z+1)
+findAdjacent :: (Eq a) => TileMatrix a -> Coord -> a -> a -> [Coord]
+findAdjacent tileMap adjacentTo@(x, y, z) emptyTile fullTile =
+   let --topLeft = (x-1, y-1, z+1)
        midLeft = (x-1, y,   z+1)
-       botLeft = (x-1, y+1, z+1)
+       --botLeft = (x-1, y+1, z+1)
        topMid  = (x,   y-1, z+1)
        botMid  = (x,   y+1, z+1)
-       topRight= (x+1, y-1, z+1)
+       --topRight= (x+1, y-1, z+1)
        midRight= (x+1, y,   z+1)
-       botRight= (x+1, y+1, z+1)
-   in filterBad [topLeft, midLeft, botLeft, toMid, botMid, topRight, midRight, botRight]
-      where filterBad lst =
+       --botRight= (x+1, y+1, z+1)
+   in filter (not . isBad) [midLeft, topMid, botMid, midRight] --, botLeft, topLeft, topRight, botRight]
+      where isBad (x, y, _) =
+               let tileContents = M.getElem (y+1) (x+1) tileMap
+               in (x < 0 || y < 0 || x > (M.ncols tileMap - 1) || y > (M.ncols tileMap - 1) ||
+                  (tileContents == fullTile) || (tileContents /= emptyTile))
+
+
+x = findPath getTileMap 's' 'o' '.' 'x'
 
 
