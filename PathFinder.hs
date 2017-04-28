@@ -45,8 +45,16 @@ findPath tileMap startTile endTile emptyTile fullTile =
       (Just startPos, Just endPos) -> findPath' (M.fromLists tileMap) startPos endPos emptyTile fullTile
 
 findPath' :: (Eq a) => TileMatrix a -> Coord -> Coord -> a -> a -> Either [Coord] String
-findPath' tileMap startPos endPos emptyTile fullTile =
-   Left $ findAdjacent tileMap endPos emptyTile fullTile
+findPath' tileMap startPos endPos emptyTile fullTile = Left $ helper [endPos] endPos
+   where helper coords nextPos =
+            let adjacent = findAdjacent tileMap nextPos emptyTile fullTile
+                newCoords = coords ++ adjacent
+                isGoodWeight coord@(x, y, z) =
+                  foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z <= z_) then False else acc)
+                        True
+                        (delete coord newCoords)
+            in filter isGoodWeight newCoords
+
 
 
 findAdjacent :: (Eq a) => TileMatrix a -> Coord -> a -> a -> [Coord]
