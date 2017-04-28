@@ -112,12 +112,13 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
 
 --pathStepList result from findPath. this contains every step
 --getShortestPath returns shortest path
-getShortestPath [] = Right "bad path"
-getShortestPath (x:xs) = Left $
-   foldr
-      (\currStep@(x, y, currZ) accStep@(_, _, accZ) -> if currZ > accZ then currStep else accStep)
-      (car x)
-      (cdr x)
+getShortestPath [] = []
+getShortestPath (x:xs) =
+   let maxStep@(_, _, maxStepZ) =
+         foldr (\currStep@(x, y, currZ) accStep@(_, _, accZ) -> if currZ > accZ then currStep else accStep)
+               x
+               xs
+   in maxStep : getShortestPath (filter (\(_, _, z_) -> z_ /= maxStepZ) xs)
 
 ------
 
@@ -132,21 +133,27 @@ getMatrixMapChrPaths tileMap goodPath =
 
 
 --Matrix with character digits of numbers for path
-getMatrixMapDisplayPaths tileMap goodPath =
+displayMatrixMapPaths tileMap goodPath =
    let matrixMap = M.fromLists tileMap
    in helper' matrixMap goodPath
       where helper' mMap [] = mMap
             helper' mMap ((y,x,z):xs) = helper' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
 
 
-pathStepsList = findPath getTileMap 's' 'o' '.' 'x'
+--list of all possible map paths
+allPathsStepList :: Either [Coord] String
+allPathsStepList = findPath getTileMap 's' 'o' '.' 'x'
 
+shortestPathsStepList :: [Coord]
+shortestPathsStepList = getShortestPath . extractEither $ allPathsStepList
 
-shortestPathStepsMatrix = getMatrixMapDisplayPaths getTileMap (extractEither pathStepsList)
+allPathsStepMatrix = displayMatrixMapPaths getTileMap (extractEither allPathsStepList)
+shortestPathsStepMatrix = displayMatrixMapPaths getTileMap shortestPathsStepList
 originalMatrixMap = M.fromLists getTileMap --original map
 
-main = do print pathStepsList
-          print shortestPathStepsMatrix
+main = do print allPathsStepList
+          print allPathsStepMatrix
+          print shortestPathsStepMatrix
           print originalMatrixMap
           return 0
 
