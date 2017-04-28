@@ -1,6 +1,6 @@
 import Data.List
 import qualified Data.Matrix as M
-
+import Data.Char (intToDigit)
 
 type TileMatrix a = M.Matrix a
 type TileMap a = [[a]]
@@ -111,8 +111,25 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
                   (tileContents == fullTile) || (not $ tileContents `elem` nonFullTile))
 
 
+displayPaths tileMap goodPath =
+   let matrixMap = M.fromLists tileMap
+   in displayPaths' matrixMap goodPath
+
+displayPaths' mMap [] = mMap
+displayPaths' mMap ((y,x,z):xs) = displayPaths' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
+
 
 x = findPath getTileMap 's' 'o' '.' 'x'
+
+extractEither (Left y) = y
+extractJust (Just y) = y
+
+y = displayPaths getTileMap (extractEither x)
+z = M.fromLists getTileMap
+
+main = do print y
+          print z
+          return 0
 
 --findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
 
