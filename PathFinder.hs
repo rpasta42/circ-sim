@@ -6,8 +6,9 @@ type TileMatrix a = M.Matrix a
 type TileMap a = [[a]]
 type Coord = (Int, Int, Int)
 
-getTileMap :: TileMap Char
-getTileMap = [   --y
+
+getTileMap1 :: TileMap Char
+getTileMap1 = [   --y
    "xxxxxxxxxx", --0
    "x...xx.x.x", --1
    "x.x..x...x", --2
@@ -20,6 +21,54 @@ getTileMap = [   --y
    "xxxxxxxxxx"  --9
    ]
 ----0123456789 x
+
+getTileMap2 :: TileMap Char
+getTileMap2 = [   --y
+   "xxxxxxxxxx", --0
+   "x...xx.x.x", --1
+   "x.x..xs..x", --2
+   "x.xx...x.x", --3
+   "x.x..x...x", --4
+   "x...xx.x.x", --5
+   "x.x..x.x.x", --6
+   "x.xx...x.x", --7
+   "x..o.x...x", --8
+   "xxxxxxxxxx"  --9
+   ]
+----0123456789 x
+
+getTileMap3 :: TileMap Char
+getTileMap3 = [   --y
+   "xxxxxxxxxx", --0
+   "x...xx.x.x", --1
+   "x.x..xs..x", --2
+   "x.xx..xx.x", --3
+   "x.x..x...x", --4
+   "x...xx.x.x", --5
+   "x.x..x.x.x", --6
+   "x.xx...x.x", --7
+   "x..o.x...x", --8
+   "xxxxxxxxxx"  --9
+   ]
+----0123456789 x
+
+getTileMap4 :: TileMap Char
+getTileMap4 = [   --y
+   "xxxxxxxxxx", --0
+   "x...xx.x.x", --1
+   "x.x..xsx.x", --2
+   "x.xx..xx.x", --3
+   "x.x..x...x", --4
+   "x...xx.x.x", --5
+   "x.x..x.x.x", --6
+   "x.xx...x.x", --7
+   "x..o.x...x", --8
+   "xxxxxxxxxx"  --9
+   ]
+----0123456789 x
+
+getTileMap = getTileMap4
+
 
 findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
 findTile destChar tileMap = findTile' destChar tileMap 0
@@ -58,7 +107,7 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                  else
                      let adjacent = findAdjacent tileMap
                                                  (coords !! nextPosIndex)
-                                                 [emptyVal , startVal] --, endVal]
+                                                 [emptyVal, startVal] --, endVal]
                                                  fullVal
                          newCoords = coords ++ adjacent
                          isGoodWeight coord@(x, y, z) =
@@ -67,6 +116,7 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                                  (delete coord coords) --newCoords)
                          goodCoords = (filter isGoodWeight newCoords)
                      in helper goodCoords (nextPosIndex+1)
+                     --in if null goodCoords then Right "No adjacent movable" else helper goodCoords (nextPosIndex+1)
 
 
 haveFinishCoord coords endCoord@(x,y,_) =
@@ -75,9 +125,9 @@ haveFinishCoord coords endCoord@(x,y,_) =
          coords
 
 --can do this based on number of empty and checked coords, don't need to check each one
-allEmptyChecked checkedCoords emptyCoords = length checkedCoords >= length emptyCoords
+--allEmptyChecked checkedCoords emptyCoords = length checkedCoords >= length emptyCoords
 
-allEmptyChecked' checkedCoords emptyCoords =
+allEmptyChecked checkedCoords emptyCoords =
    let isCoordInChecked coord@(x, y, _) =
          foldr (\(x_, y_, _) acc -> if x_ == x && y_ == y then True else acc)
                False
@@ -110,8 +160,8 @@ findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
                in (x < 0 || y < 0 || x > (M.ncols tileMap - 1) || y > (M.ncols tileMap - 1) ||
                   (tileContents == fullTile) || (not $ tileContents `elem` nonFullTile))
 
---pathStepList result from findPath. this contains every step
 --getShortestPath returns shortest path
+--pathStepList is a result from findPath. this contains every possible step
 
 {-|
 getShortestPath [] = []
@@ -192,5 +242,7 @@ main = do print "Path list:"
 
 
 extractEither (Left y) = y
+extractEither (Right y) = error y
+
 extractJust (Just y) = y
 
