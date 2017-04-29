@@ -67,7 +67,7 @@ getTileMap4 = [   --y
    ]
 ----0123456789 x
 
-getTileMap = getTileMap4
+getTileMap = getTileMap1
 
 
 findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
@@ -98,24 +98,30 @@ findPath tileMap startTileVal endTileVal emptyTileVal fullTileVal =
                                                 (allEmptyTileCoords tileMap emptyTileVal)
 
 findPath' :: (Eq a) => TileMatrix a -> Coord -> Coord -> a -> a -> a -> a -> [Coord] -> Either [Coord] String
-findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoords = helper [endPos] 0
-   where helper coords nextPosIndex =
+findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoords = helper [endPos] 0 1
+   where helper coords nextPosIndex currZ =
             if haveFinishCoord coords startPos
             then Left coords
             else if (allEmptyChecked coords emptyTileCoords) -- || (nextPosIndex > 2)
                  then Right "No path"
                  else
-                     let adjacent = findAdjacent tileMap
-                                                 (coords !! nextPosIndex)
+                     let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
+                         adjacent = findAdjacent tileMap
+                                                 nextPos
                                                  [emptyVal, startVal] --, endVal]
                                                  fullVal
                          newCoords = coords ++ adjacent
-                         isGoodWeight coord@(x, y, z) =
-                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z > z_) then False else acc) --z >= z_
+                         isGoodWeight coord@(x, y, z) = --TODO: z>= z_ then 6th step in getTileMap1 is bad. if z>z_ then getTileMap3 fails
+                           foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z >= z_) then False else acc) --z >= z_
                                  True
-                                 (delete coord coords) --newCoords)
+                                 (delete coord coords) --newCoords) --coords) --newCoords)
                          goodCoords = (filter isGoodWeight newCoords)
-                     in helper goodCoords (nextPosIndex+1)
+                     --in helper goodCoords (nextPosIndex+1)
+                     in if length goodCoords == length coords && (not $ haveFinishCoord goodCoords startPos) && nextPosZ > currZ
+                        then Right $ "No new coords found length coords: " ++ (show $ length goodCoords) ++ " old z: " ++
+                                     (show $ currZ) ++ " next z:" ++ (show $ nextPosZ)
+                        else helper goodCoords (nextPosIndex+1) nextPosZ
+
                      --in if null goodCoords then Right "No adjacent movable" else helper goodCoords (nextPosIndex+1)
 
 
