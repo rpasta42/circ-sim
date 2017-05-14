@@ -155,19 +155,17 @@ tileMapToInfo tMap startTileVal endTileVal emptyTileVal fullTileVal = do
 
 
 findPath :: (Eq a) => TileMapInfo a -> Either String [Coord]
-findPath (TileMapInfo tMap tMatrix startTileVal endTileVal emptyTileVal fullTileVal startPos endPos) = do
-   return findPath' tMatrix
-                    startPos endPos
-                    startTileVal endTileVal emptyTileVal fullTileVal
-                    (allEmptyTileCoords tMap emptyTileVal)
+findPath tileMapInfo@(TileMapInfo tMap tMatrix startTileVal endTileVal emptyTileVal fullTileVal startPos endPos) =
+   findPath' tileMapInfo
+             (allEmptyTileCoords tMap emptyTileVal)
 
 findPath' :: (Eq a) => TileMapInfo a -> [Coord] -> Either String [Coord]
 findPath' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos endPos) emptyTileCoords = helper [endPos] 0 1
    where helper coords nextPosIndex currZ =
             if haveFinishCoord coords startPos
-            then Left coords
+            then Right coords
             else if (allEmptyChecked coords emptyTileCoords) -- || (nextPosIndex > 2)
-                 then Right "No path"
+                 then Left "No path"
                  else
                      let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
                          adjacent = findAdjacent tMatrix
@@ -182,7 +180,7 @@ findPath' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos en
                          goodCoords = (filter isGoodWeight newCoords)
                      --in helper goodCoords (nextPosIndex+1)
                      in if length goodCoords == length coords && (not $ haveFinishCoord goodCoords startPos) && nextPosZ > currZ
-                        then Right $ "No new coords found length coords: " ++ (show $ length goodCoords) ++ " old z: " ++
+                        then Left $ "No new coords found length coords: " ++ (show $ length goodCoords) ++ " old z: " ++
                                      (show $ currZ) ++ " next z:" ++ (show $ nextPosZ)
                         else helper goodCoords (nextPosIndex+1) nextPosZ
 
@@ -289,16 +287,16 @@ displayMatrixMapPaths tileMap goodPath =
       where helper' mMap [] = mMap
             helper' mMap ((y,x,z):xs) = helper' (M.setElem (kkDigit z) (x+1, y+1) mMap) xs
 
-pathFinder :: (Eq a) => [[a]] -> a -> a -> a -> a -> Either [(Int, Int, Int)] String
+pathFinder :: (Eq a) => [[a]] -> a -> a -> a -> a -> Either String [(Int, Int, Int)]
 pathFinder tMap startElement endElement emptyElement fullElement =
-   let allPathsSteps = findPath tMap startElement endElement emptyElement fullElement
+   let allPathsSteps = tileMapToInfo tMap startElement endElement emptyElement fullElement >>= findPath
    in helper' allPathsSteps
-      where helper' (Right x) = Right x
-            helper' (Left x) = Left (getShortestPath x)
+      where helper' (Left x) = Left x
+            helper' (Right x) = Right (getShortestPath x)
 
 --list of all possible map paths
-allPathsStepList :: Either [Coord] String
-allPathsStepList = findPath . tileMapToInfo $ getTileMap 's' 'o' '.' 'x'
+allPathsStepList :: Either String [Coord]
+allPathsStepList = (tileMapToInfo getTileMap 's' 'o' '.' 'x') >>= findPath
 
 shortestPathsStepList :: [Coord]
 shortestPathsStepList = getShortestPath . extractEither $ allPathsStepList
@@ -320,8 +318,8 @@ main = do print "Path list:"
 --findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
 
 
-extractEither (Left y) = y
-extractEither (Right y) = error y
+extractEither (Left y) = error y
+extractEither (Right y) = y
 
 extractJust (Just y) = y
 
