@@ -11,16 +11,14 @@ type TileMap a = [[a]]
 type Coord = (Int, Int, Int)
 
 data TileMapInfo a = TileMapInfo { tileMap :: TileMap a
+                                 , tileMatrix :: TileMatrix a
                                  , tileStart :: a
                                  , tileEnd :: a
                                  , tileEmpty :: a
                                  , tileFull :: a
+                                 , tileStartPos :: Coord
+                                 , tileEndPos :: Coord
                                  }
-
-data TileMatrixInfo a = TileMatrixInfo { tileStartPos :: Coord
-                                       , tileEndPos :: Coord
-                                       }
-
 
 
 
@@ -136,41 +134,35 @@ findTile' destChar (row:rows) y =
       Just x -> Just (x, y, 0)
 
 
-findTileEither :: (Eq a) => a -> TileMap a -> Either Coord String
+findTileEither :: (Eq a) => a -> TileMap a -> Either String Coord
 findTileEither destChar tileMap =
    case retOption of
-      (Just x) -> (Left x)
-      Nothing -> Right "findTile failed"
+      (Just x) -> (Right x)
+      Nothing -> Left "findTile failed"
       where retOption = findTile' destChar tileMap 0
 
-tileMapToMatrix :: TileMapInfo a -> Either (TileMatrixInfo a) String
-tileMapToMatrix (TileMapInfo tMap startTileVal endTileVal emptyTileVal fullTileVal) = do
-   startPos <- findTile startTileVal tileMap
-   endPos <- findTile endTileVal tileMap
-   return $ TileMatrixInfo startPos endPos
+tileMapToInfo :: (Eq a) => TileMap a -> a -> a -> a -> a -> Either String (TileMapInfo a)
+tileMapToInfo tMap startTileVal endTileVal emptyTileVal fullTileVal = do
+   startPos <- findTileEither startTileVal tMap --Right "No starting position"
+   endPos <- findTileEither endTileVal tMap --Right "No end position"
+   return $ TileMapInfo tMap (M.fromLists tMap) startTileVal endTileVal emptyTileVal fullTileVal startPos endPos
+
 
 
 
 --startTile = starting position, endTile = ending position,
 --emptyTile = empty path, fullTile = occupied
 
---findPath :: (Eq a) => TileMap a -> TileMapInfo a -> Either [Coord] String
---findPath tileMap (TileMapInfo startTileVal endTileVal emptyTileVal fullTileVal) =
-findPath :: (Eq a) => TileMap a -> a -> a -> a -> a -> Either [Coord] String
-findPath tileMap startTileVal endTileVal emptyTileVal fullTileVal =
-   let startPosMaybe = findTile startTileVal tileMap
-       endPosMaybe = findTile endTileVal tileMap
-   in case (startPosMaybe, endPosMaybe) of
-      (Nothing, _) -> Right "No starting position"
-      (_, Nothing) -> Right "No end position"
-      (Just startPos, Just endPos) -> findPath' (M.fromLists tileMap)
-                                                startPos endPos
-                                                startTileVal endTileVal
-                                                emptyTileVal fullTileVal
-                                                (allEmptyTileCoords tileMap emptyTileVal)
 
-findPath' :: (Eq a) => TileMatrix a -> Coord -> Coord -> a -> a -> a -> a -> [Coord] -> Either [Coord] String
-findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoords = helper [endPos] 0 1
+findPath :: (Eq a) => TileMapInfo a -> Either String [Coord]
+findPath (TileMapInfo tMap tMatrix startTileVal endTileVal emptyTileVal fullTileVal startPos endPos) = do
+   return findPath' tMatrix
+                    startPos endPos
+                    startTileVal endTileVal emptyTileVal fullTileVal
+                    (allEmptyTileCoords tMap emptyTileVal)
+
+findPath' :: (Eq a) => TileMapInfo a -> [Coord] -> Either String [Coord]
+findPath' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos endPos) emptyTileCoords = helper [endPos] 0 1
    where helper coords nextPosIndex currZ =
             if haveFinishCoord coords startPos
             then Left coords
@@ -178,7 +170,7 @@ findPath' tileMap startPos endPos startVal endVal emptyVal fullVal emptyTileCoor
                  then Right "No path"
                  else
                      let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
-                         adjacent = findAdjacent tileMap
+                         adjacent = findAdjacent tMatrix
                                                  nextPos
                                                  [emptyVal, startVal] --, endVal]
                                                  fullVal
@@ -306,7 +298,7 @@ pathFinder tMap startElement endElement emptyElement fullElement =
 
 --list of all possible map paths
 allPathsStepList :: Either [Coord] String
-allPathsStepList = findPath getTileMap 's' 'o' '.' 'x'
+allPathsStepList = findPath . tileMapToInfo $ getTileMap 's' 'o' '.' 'x'
 
 shortestPathsStepList :: [Coord]
 shortestPathsStepList = getShortestPath . extractEither $ allPathsStepList
