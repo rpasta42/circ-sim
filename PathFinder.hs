@@ -119,7 +119,7 @@ getTileMap6 = [
    ]
 
 
-getTileMap = getTileMap6
+getTileMap = getTileMap1
 
 
 findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
