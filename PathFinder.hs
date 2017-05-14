@@ -1,3 +1,7 @@
+module PathFinder
+( pathFinder
+) where
+
 import Data.List
 import qualified Data.Matrix as M
 import Data.Char (intToDigit, chr, ord)
@@ -67,8 +71,48 @@ getTileMap4 = [   --y
    ]
 ----0123456789 x
 
-getTileMap = getTileMap1
 
+--matches lhData5 in func_solv_prob.hs
+getTileMap5 :: TileMap Char
+getTileMap5 = [
+   "xxxxxxxxxxxxxxxxxxxxxxx",
+   "xx...x.xxxx.x...x.xxxxx",
+   "xx.x.x.xxxx.x.x.x.x...x",
+   "xx.x..........x.....x.x",
+   "x..xxx.xxxx.xxxxx.xxx.x",
+   "xsx......xx.x...x.xxxox",
+   "x...xx.x.xx.x.x.x.xx..x",
+   "xxxxxx.x......x.x.xx.xx",
+   "xxxxxx.xxxx.xxx.x.x..xx",
+   "xxxxxx.xxxx.xxx.....xxx",
+   "xxxxxxxxxxxxxxxxxxxxxxx"
+ -- 1234567890123456789012
+   ]
+
+
+--TODO: this one is messed up
+
+--matches lhData6 in func_solv_prob.hs
+getTileMap6 :: TileMap Char
+getTileMap6 = [
+   "xxxxxxxxxxxxxxxxxxxxxxx",
+   "xx...x.xxxx.x...x.xxxxx",
+   "xx.x.x.xxxx.x.x.x.x...x",
+   "xx.x..........x.....x.x",
+   "x..xxx.xxxx.xxxxx.xxx.x",
+   "xsx......xx.xxxxx.xxxox",
+   "x...xx.x.xx.xxxxx.xx..x",
+   "xxxxxx.x.............xx",
+   "xxxxxx.xxxx.xxxxx.xxxxx",
+   "xxxxxx.xxxx.xxxxx.xxxxx",
+   "xxxxxxxxxxxxxxxxxxxxxxx"
+ -- 1234567890123456789012
+   ]
+
+
+
+
+getTileMap = getTileMap6
 
 findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
 findTile destChar tileMap = findTile' destChar tileMap 0
@@ -179,6 +223,7 @@ getShortestPath pathStepList@(x:xs) =
    in maxStep : getShortestPath (filter (\(_, _, z_) -> z_ /= maxStepZ) xs)
 -}
 
+getShortestPath :: [Coord] -> [Coord]
 getShortestPath pathStepList = getShortestPath' [] pathStepList
 
 getShortestPath' [] [] = []
@@ -215,13 +260,21 @@ getMatrixMapChrPaths tileMap goodPath =
             helper' mMap ((y,x,z):xs) = helper' (M.setElem (chr $ 300+z) (x+1, y+1) mMap) xs
 
 
+kkDigit x = if x > 9 then '0' else intToDigit x
+
 --Matrix with character digits of numbers for path
 displayMatrixMapPaths tileMap goodPath =
    let matrixMap = M.fromLists tileMap
    in helper' matrixMap goodPath
       where helper' mMap [] = mMap
-            helper' mMap ((y,x,z):xs) = helper' (M.setElem (intToDigit z) (x+1, y+1) mMap) xs
+            helper' mMap ((y,x,z):xs) = helper' (M.setElem (kkDigit z) (x+1, y+1) mMap) xs
 
+pathFinder :: (Eq a) => [[a]] -> a -> a -> a -> a -> Either [(Int, Int, Int)] String
+pathFinder tMap startElement endElement emptyElement fullElement =
+   let allPathsSteps = findPath tMap startElement endElement emptyElement fullElement
+   in helper' allPathsSteps
+      where helper' (Right x) = Right x
+            helper' (Left x) = Left (getShortestPath x)
 
 --list of all possible map paths
 allPathsStepList :: Either [Coord] String

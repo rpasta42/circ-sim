@@ -1,1 +1,4 @@
 *.swp
+intro_to_parsing
+.cabal-sandbox
+cabal.sandbox.config
