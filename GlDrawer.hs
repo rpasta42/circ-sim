@@ -34,7 +34,7 @@ data DrawObject a t = DrawObject { shape :: (Shape a)
 --a = unit for electric data, b = unit for location
 --c = numeric unit for OpenGL, d = renderMode type
 drawCircuit :: Circuit a b -> [DrawObject c d]
-
+drawCircuit x = []
 
 
 
@@ -55,10 +55,15 @@ drawVertices renderMode vertices = renderPrimitive Polygon $
 
 main :: IO ()
 main = do
-  (_progName, _args) <- getArgsAndInitialize
-  _window <- createWindow "Hello World"
-  displayCallback $= display
-  mainLoop
+   (_progName, _args) <- getArgsAndInitialize
+   _window <- createWindow "Hello World"
+   displayCallback $= display
+
+   --https://hackage.haskell.org/package/GLUT-2.7.0.12/docs/Graphics-UI-GLUT-Callbacks-Window.html#g:9
+   --mouseCallback $= onMouse
+   motionCallback $= Just onMouseMove
+
+   mainLoop
 
 
 display :: DisplayCallback
@@ -66,4 +71,8 @@ display = do
   clear [ ColorBuffer ]
   drawVertices Polygon myPoints
   flush
+
+
+onMouseMove :: MotionCallback
+onMouseMove position = print (show position)
 
