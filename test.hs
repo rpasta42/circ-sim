@@ -23,7 +23,7 @@ resistor' = resistor3
 circuit' = addCircuitElements newCircuit [battery', positiveWire', negativeWire', resistor']
 
 
-drawCircuit circuit'
+resultDrawing = drawCircuit circuit'
 
 --let battery = EnergySourceElement (VoltageSource 5)
 --let resistor = ResistorElement $ Resistor 5

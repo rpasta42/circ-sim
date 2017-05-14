@@ -76,3 +76,5 @@ display = do
 onMouseMove :: MotionCallback
 onMouseMove position = print (show position)
 
+
+

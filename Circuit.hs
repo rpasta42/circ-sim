@@ -1,6 +1,7 @@
 module Circuit
 ( Terminal(Terminal, TerminalByName)
 , CircuitElement(CircuitElement, circuitElementName, element, terminal1, terminal2)
+, Element(EnergySourceElement, ResistorElement, WireElement)
 , DrawData(DrawData, positions)
 , Circuit(Circuit, elements)
 , newTerminal, newCircuit, newDrawData, newCircuitElement
@@ -49,12 +50,11 @@ data CircuitElement a = CircuitElement { circuitElementName :: String
 --color, size, rotation, etc
 data DrawData a = DrawData { positions :: [Point a]
                            } deriving (Show)
-
---a: unit for electric data, b: unit for location
 data Circuit a b = Circuit { elements :: [(CircuitElement a, DrawData b)]
                            } deriving (Show)
 
 -- constructor functions
+
 
 newTerminal :: Terminal a
 newTerminal = Terminal { terminals = [] }
