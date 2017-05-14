@@ -10,6 +10,19 @@ type TileMatrix a = M.Matrix a
 type TileMap a = [[a]]
 type Coord = (Int, Int, Int)
 
+data TileMapInfo a = TileMapInfo { tileMap :: TileMap a
+                                 , tileStart :: a
+                                 , tileEnd :: a
+                                 , tileEmpty :: a
+                                 , tileFull :: a
+                                 }
+
+data TileMatrixInfo a = TileMatrixInfo { tileStartPos :: Coord
+                                       , tileEndPos :: Coord
+                                       }
+
+
+
 
 getTileMap1 :: TileMap Char
 getTileMap1 = [   --y
@@ -89,9 +102,7 @@ getTileMap5 = [
  -- 1234567890123456789012
    ]
 
-
 --TODO: this one is messed up
-
 --matches lhData6 in func_solv_prob.hs
 getTileMap6 :: TileMap Char
 getTileMap6 = [
@@ -110,9 +121,8 @@ getTileMap6 = [
    ]
 
 
-
-
 getTileMap = getTileMap6
+
 
 findTile :: (Eq a) => a -> TileMap a -> Maybe Coord
 findTile destChar tileMap = findTile' destChar tileMap 0
@@ -126,8 +136,26 @@ findTile' destChar (row:rows) y =
       Just x -> Just (x, y, 0)
 
 
+findTileEither :: (Eq a) => a -> TileMap a -> Either Coord String
+findTileEither destChar tileMap =
+   case retOption of
+      (Just x) -> (Left x)
+      Nothing -> Right "findTile failed"
+      where retOption = findTile' destChar tileMap 0
+
+tileMapToMatrix :: TileMapInfo a -> Either (TileMatrixInfo a) String
+tileMapToMatrix (TileMapInfo tMap startTileVal endTileVal emptyTileVal fullTileVal) = do
+   startPos <- findTile startTileVal tileMap
+   endPos <- findTile endTileVal tileMap
+   return $ TileMatrixInfo startPos endPos
+
+
+
 --startTile = starting position, endTile = ending position,
 --emptyTile = empty path, fullTile = occupied
+
+--findPath :: (Eq a) => TileMap a -> TileMapInfo a -> Either [Coord] String
+--findPath tileMap (TileMapInfo startTileVal endTileVal emptyTileVal fullTileVal) =
 findPath :: (Eq a) => TileMap a -> a -> a -> a -> a -> Either [Coord] String
 findPath tileMap startTileVal endTileVal emptyTileVal fullTileVal =
    let startPosMaybe = findTile startTileVal tileMap
