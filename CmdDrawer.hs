@@ -82,9 +82,6 @@ elToAscii (ResistorElement resistanceElem) = strToDrawGrid "\
    \+=========+\n\
    \|=-/\\/\\/-=|\n\
    \+=========+"
---   \+=========+\n\
---   \|=-/\\/\\/-=|\n\
---   \+=========+"
 
 elToAscii (WireElement wireElem) = strToDrawGrid "----"
 
