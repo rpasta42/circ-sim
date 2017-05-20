@@ -1,5 +1,6 @@
 import Circuit
 import CmdDrawer
+import DrawGrid
 
 circuit = newCircuit
 
@@ -24,6 +25,10 @@ circuit' = addCircuitElements newCircuit [battery', positiveWire', negativeWire'
 
 
 resultDrawing = drawCircuit circuit'
+
+resultStr = drawGridToDisplayStr resultDrawing
+resultIO = do
+   mapM_ putStrLn resultStr
 
 --let battery = EnergySourceElement (VoltageSource 5)
 --let resistor = ResistorElement $ Resistor 5

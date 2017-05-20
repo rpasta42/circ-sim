@@ -4,6 +4,7 @@ module DrawGrid (
  , gridNumCols
  , newDrawGrid
  , overwriteGrid
+ , drawGridToDisplayStr
 ) where
 
 import Utils
@@ -33,6 +34,7 @@ overwriteGrid :: DrawGrid -> DrawGrid -> ShapeCoord -> DrawGrid
 overwriteGrid (DrawGridChar drawGrid) (DrawGridChar drawElem) drawCoord =
    DrawGridChar (mReplace drawGrid drawElem drawCoord)
 
-
+drawGridToDisplayStr (DrawGridChar x) = M.toLists x
+--drawGridToDisplayStr (DrawGridInt x) = M.toLists x
 
 

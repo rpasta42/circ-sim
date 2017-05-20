@@ -21,11 +21,11 @@ drawCircuit (Circuit {elements=elems_draw_data}) =
    let circ_elems = map fst elems_draw_data
    in drawCircuit' circ_elems [] $ newDrawGrid circuitWidth circuitHeight
 
-
 drawCircuit' :: (Num a)
              => [CircuitElement a] -> [ShapeCoord] -> DrawGrid
              -> DrawGrid
-drawCircuit' _ [] drawGrid = drawGrid
+
+drawCircuit' [] _ drawGrid = drawGrid
 drawCircuit' circElems@(elem:restElems) drawGridCoords drawGrid =
    let (newDrawGrid, newDrawGridCoords) = drawElement drawGrid drawGridCoords elem
    in drawCircuit' restElems newDrawGridCoords newDrawGrid
@@ -57,10 +57,10 @@ addElementToGrid drawElement drawGrid drawGridCoords =
                                           , if y > yAcc then y else yAcc))
                                      (0, 0)
                                      drawGridCoords
-       newStartX = elNumCols + 1
-       newStartY = elNumRows + 1
-       newEndX = newStartX + maxX
-       newEndY = newStartY + maxY
+       newStartX = maxX + 1
+       newStartY = maxY + 1
+       newEndX = newStartX + elNumCols - 1
+       newEndY = newStartY + elNumRows - 1
        newShapeCoords = (newStartX, newStartY, newEndX, newEndY)
        newGrid = overwriteGrid drawGrid drawElement newShapeCoords
    in (newGrid, newShapeCoords : drawGridCoords)
@@ -82,7 +82,9 @@ elToAscii (ResistorElement resistanceElem) = strToDrawGrid "\
    \+=========+\n\
    \|=-/\\/\\/-=|\n\
    \+=========+"
-
+--   \+=========+\n\
+--   \|=-/\\/\\/-=|\n\
+--   \+=========+"
 
 elToAscii (WireElement wireElem) = strToDrawGrid "----"
 
