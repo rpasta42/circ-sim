@@ -64,6 +64,43 @@ getTileMap4 = [   --y
    ]
 ----0123456789 x
 
+--matches lhData5 in func_solv_prob.hs
+getTileMap5 :: TileMap Char
+getTileMap5 = [
+   "xxxxxxxxxxxxxxxxxxxxxxx",
+   "xx...x.xxxx.x...x.xxxxx",
+   "xx.x.x.xxxx.x.x.x.x...x",
+   "xx.x..........x.....x.x",
+   "x..xxx.xxxx.xxxxx.xxx.x",
+   "xsx......xx.x...x.xxxox",
+   "x...xx.x.xx.x.x.x.xx..x",
+   "xxxxxx.x......x.x.xx.xx",
+   "xxxxxx.xxxx.xxx.x.x..xx",
+   "xxxxxx.xxxx.xxx.....xxx",
+   "xxxxxxxxxxxxxxxxxxxxxxx"
+ -- 1234567890123456789012
+   ]
+
+--TODO: this one is messed up
+--matches lhData6 in func_solv_prob.hs
+getTileMap6 :: TileMap Char
+getTileMap6 = [
+   "xxxxxxxxxxxxxxxxxxxxxxx",
+   "xx...x.xxxx.x...x.xxxxx",
+   "xx.x.x.xxxx.x.x.x.x...x",
+   "xx.x..........x.....x.x",
+   "x..xxx.xxxx.xxxxx.xxx.x",
+   "xsx......xx.xxxxx.xxxox",
+   "x...xx.x.xx.xxxxx.xx..x",
+   "xxxxxx.x.............xx",
+   "xxxxxx.xxxx.xxxxx.xxxxx",
+   "xxxxxx.xxxx.xxxxx.xxxxx",
+   "xxxxxxxxxxxxxxxxxxxxxxx"
+ -- 1234567890123456789012
+   ]
+
+
+
 -- #test code
 
 getTileMap = getTileMap1
@@ -75,17 +112,18 @@ tileMapInfo = tileMapToInfo getTileMap 's' 'o' '.' 'x'
 allPathsStepList :: Either String [Coord]
 allPathsStepList = tileMapInfo >>= findAllPaths
 
+--list of shortest paths
 shortestPathsStepList :: Either String [Coord]
 shortestPathsStepList = allPathsStepList >>= getShortestPath
 
---allPathsStepMatrix = displayMatrixMapPaths getTileMap
---                                           (extractEither allPathsStepList)
-
+--display matrix with all paths
 allPathsStepMatrix = allPathsStepList >>= displayMatrixMapPaths getTileMap
 
+--display matrix with shortest path
+shortestPathsStepMatrix = shortestPathsStepList
+                        >>= displayMatrixMapPaths getTileMap
 
-shortestPathsStepMatrix = displayMatrixMapPaths getTileMap
-                                                (extractEither shortestPathsStepList)
+
 originalMatrixMap = M.fromLists getTileMap --original map
 
 main = do print "Path list:"
