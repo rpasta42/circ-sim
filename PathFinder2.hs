@@ -1,6 +1,11 @@
 
 import Utils
 
+data TileMapFuncs a = TimeMapFuncs { isTileEmpty :: (TileMatrix a -> TileCoord2 -> Bool)
+                                   , isTileStart :: (TileMatrix a -> TileCoord2 -> Bool)
+                                   , isTileEnd   :: (TIleMatrix a -> TileCoord2 -> Bool)
+                                   }
+
 data TileMapInfo a =
    TileMapInfo { tileMap :: TileMap a
                , tileMatrix :: TileMatrix a
@@ -22,7 +27,7 @@ findAllPaths tileMapInfo@(TileMapInfo tMap tMatrix tStart tEnd tIsEmpty) =
 
 
 findAllPaths' :: (Eq a) => TileMapInfo a -> [TileCoord2] -> Either String [TileCoord3]
-findAllPaths' (TileMapInfo tMap tMatrix tStartPos@(startX, startY) tEndPos@(endX, endY) tIsEmpty) emptyTileCoords =
+findAllPaths' (TileMapInfo tMap tMatrix tStartPos tEndPos tIsEmpty) emptyTileCoords =
    helper [endPos] 0 1
    where
       haveFinishTileCoord coords endCoord@(x,y,_) =
@@ -31,7 +36,7 @@ findAllPaths' (TileMapInfo tMap tMatrix tStartPos@(startX, startY) tEndPos@(endX
          coords
 
       findAdjacent :: (Eq a) => TileMatrix a -> TileCoord3 -> [a] -> a -> [TileCoord3]
-      findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
+      findAdjacent tileMap adjacentTo@(x, y, z) =
          let midLeft = (x-1, y,   z+1)
              topMid  = (x,   y-1, z+1)
              botMid  = (x,   y+1, z+1)
@@ -44,18 +49,18 @@ findAllPaths' (TileMapInfo tMap tMatrix tStartPos@(startX, startY) tEndPos@(endX
 
       --can do this based on number of empty and checked coords, don't need to check each one
       --allEmptyChecked checkedTileCoord3s emptyTileCoord3s = length checkedTileCoord3s >= length emptyTileCoord3s
-      allEmptyChecked checkedTileCoord3s emptyTileCoord3s =
-         let isTileCoord3InChecked coord@(x, y, _) =
-               foldr (\(x_, y_, _) acc -> if x_ == x && y_ == y then True else acc)
+      allEmptyChecked checkedTileCoords emptyTileCoords =
+         let isTileCoordInChecked coord@(x, y, _) =
+               foldr (\(x_, y_) acc -> if x_ == x && y_ == y then True else acc)
                      False
-                     checkedTileCoord3s
-             leftOverTileCoord3s = filter (not . isTileCoord3InChecked) emptyTileCoord3s
-         in length leftOverTileCoord3s == 0
+                     checkedTileCoords
+             leftOverTileCoords = filter (not . isTileCoordInChecked) emptyTileCoords
+         in length leftOverTileCoords == 0
 
       helper coords nextPosIndex currZ =
          if haveFinishTileCoord coords tStartPos
          then Right coords
-         else if (allEmptyChecked coords emptyTileTileCoord3s) -- || (nextPosIndex > 2)
+         else if (allEmptyChecked coords emptyTileCoords) -- || (nextPosIndex > 2)
               then Left "No path"
               else
                   let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
