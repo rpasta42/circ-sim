@@ -77,11 +77,12 @@ allPathsStepList = tileMapInfo >>= findAllPaths
 
 shortestPathsStepList :: Either String [Coord]
 shortestPathsStepList = allPathsStepList >>= getShortestPath
---shortestPathsStepList = getShortestPath . extractEither
---                           $ allPathsStepList
 
-allPathsStepMatrix = displayMatrixMapPaths getTileMap
-                                           (extractEither allPathsStepList)
+--allPathsStepMatrix = displayMatrixMapPaths getTileMap
+--                                           (extractEither allPathsStepList)
+
+allPathsStepMatrix = allPathsStepList >>= displayMatrixMapPaths getTileMap
+
 
 shortestPathsStepMatrix = displayMatrixMapPaths getTileMap
                                                 (extractEither shortestPathsStepList)

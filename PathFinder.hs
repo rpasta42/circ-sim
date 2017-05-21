@@ -83,7 +83,7 @@ findTileEither destChar tileMap =
    case retOption of
       (Just x) -> (Right x)
       Nothing -> Left "findTile failed"
-      where retOption = findTile' destChar tileMap 0
+      where retOption = findTile destChar tileMap
 
 tileMapToInfo :: (Eq a)
               => TileMap a
@@ -229,9 +229,12 @@ getMatrixMapChrPaths tileMap goodPath =
 kkDigit x = if x > 9 then '0' else intToDigit x
 
 --Matrix with character digits of numbers for path
+displayMatrixMapPaths :: TileMap Char
+                      -> [Coord]
+                      -> Either String (TileMatrix Char)
 displayMatrixMapPaths tileMap goodPath =
    let matrixMap = M.fromLists tileMap
-   in helper' matrixMap goodPath
+   in Right $ helper' matrixMap goodPath
       where helper' mMap [] = mMap
             helper' mMap ((y,x,z):xs) = helper' (M.setElem (kkDigit z) (x+1, y+1) mMap) xs
 
