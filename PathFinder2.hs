@@ -1,19 +1,48 @@
 
 import Utils
+import qualified Data.Matrix as M
 
-data TileMapFuncs a = TimeMapFuncs { isTileEmpty :: (TileMatrix a -> TileCoord2 -> Bool)
-                                   , isTileStart :: (TileMatrix a -> TileCoord2 -> Bool)
-                                   , isTileEnd   :: (TIleMatrix a -> TileCoord2 -> Bool)
-                                   }
+type TileError = String
+type TileMatrixPred a = (TileMatrix a -> TileCoord2 -> Bool)
 
-data TileMapInfo a =
-   TileMapInfo { tileMap :: TileMap a
+data TileMatrixFuncs a = TileMatrixFuncs { isTileEmpty :: TileMatrixPred a
+                                         , isTileStart :: TileMatrixPred a
+                                         , isTileEnd   :: TileMatrixPred a
+                                         }
+
+data TileMapInfo = TileMapInfo { tileStartPos :: TileCoord2
+                               , tileEndPos :: TileCoord2
+                               , emptyTiles :: [TileCoord2]
+                               }
+
+data TileMapData a =
+   TileMapData { tileMap :: TileMap a
                , tileMatrix :: TileMatrix a
-               , tileStartPos :: TileCoord2
-               , tileEndPos :: TileCoord2
-               , tileIsEmpty :: (TileMatrix a -> TileCoord2 -> Bool)
+               , tileMatrixFuncs :: TileMatrixFuncs a
+               , tileMapInfo :: TileMapInfo
                }
 
+
+tileMapToMatrix = M.fromLists
+tileMatrixToMap = M.toLists
+
+tileMapInitFromMap tileMap = tileMapInit tileMap (tileMapToMatrix tileMap)
+tileMapInitFromMatrix tileMatrix = tileMapInit (tileMatrixToMap tileMatrix)
+
+
+
+tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a -> Either TileError (TileMapData a)
+tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStart isTileEnd) =
+   Right $ TileMapData tileMap tileMatrix tileFuncs (TileMapInfo tileStartPos tileEndPos emptyTiles)
+   where tileStartPos = Prelude.head (matrixFilter2 tileMatrix isTileStart)
+         tileEndPos = Prelude.head (matrixFilter2 tileMatrix isTileEnd)
+         emptyTiles = matrixFilter2 tileMatrix isTileEmpty
+
+
+{-
+
+getEmptyTileCoords :: (Eq a) => TileMatrix a -> (TimeMatrix a -> TileCoord2 -> Bool) -> [TileCoord2]
+getEmptyTileCoords tileMatrix isEmpty = matrixFilter2 tileMatrix isEmpty
 
 -- # findAllPaths = returns a list of all path coords
 
@@ -22,8 +51,6 @@ findAllPaths tileMapInfo@(TileMapInfo tMap tMatrix tStart tEnd tIsEmpty) =
    findAllPaths' tileMapInfo
                  (getEmptyTileCoords tMatrix tIsEmpty)
    where
-      getEmptyTileCoords :: (Eq a) => TileMatrix a -> (TimeMatrix a -> TileCoord2 -> Bool) -> [TileCoord2]
-      getEmptyTileCoords tileMatrix isEmpty = matrixFilter2 tileMatrix isEmpty
 
 
 findAllPaths' :: (Eq a) => TileMapInfo a -> [TileCoord2] -> Either String [TileCoord3]
@@ -87,7 +114,7 @@ findAllPaths' (TileMapInfo tMap tMatrix tStartPos tEndPos tIsEmpty) emptyTileCoo
 -- # getShortestPath = takes a list of all paths, and returns list for the shortest path
 --pathStepList is a result from findAllPaths. this contains every possible step
 
-{-|
+{ -|
 getShortestPath [] = []
 getShortestPath pathStepList@(x:xs) =
    let maxStep@(_, _, maxStepZ) =
@@ -95,7 +122,9 @@ getShortestPath pathStepList@(x:xs) =
                x
                xs
    in maxStep : getShortestPath (filter (\(_, _, z_) -> z_ /= maxStepZ) xs)
--}
+
+- }
+
 
 getShortestPath :: [TileCoord3] -> Either String [TileCoord3]
 getShortestPath pathStepList = getShortestPath' [] pathStepList
@@ -126,4 +155,5 @@ getShortestPath' accSteps@((accPrev@(prevX,prevY,prevZ)):accRest) pathStepList =
             $ filter (\(_,_,z_) -> z_ < currZ) pathStepList
 
 
+-}
 
