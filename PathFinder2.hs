@@ -1,79 +1,24 @@
-module PathFinder
-( pathFinder
-, findAllPaths
-, TileCoord3
-, getShortestPath
-, extractEither
-, displayMatrixMapPaths
-, TileMap
-, TileMapInfo
-, tileMapToInfo
-) where
 
 import Utils
-import Data.List
-import qualified Data.Matrix as M
-import Data.Char (intToDigit, chr, ord)
 
-data TileMapInfo a = TileMapInfo { tileMap :: TileMap a
-                                 , tileMatrix :: TileMatrix a
-                                 , tileStart :: a
-                                 , tileEnd :: a
-                                 , tileEmpty :: a
-                                 , tileFull :: a
-                                 , tileStartPos :: TileCoord3
-                                 , tileEndPos :: TileCoord3
-                                 }
-
-
---tileMapToInfo
-tileMapToInfo :: (Eq a)
-              => TileMap a
-              -> a -> a -> a -> a
-              -> Either String (TileMapInfo a)
-
-tileMapToInfo tMap startTileVal endTileVal emptyTileVal fullTileVal = do
-   startPos <- findTileEither startTileVal tMap --Right "No starting position"
-   endPos <- findTileEither endTileVal tMap --Right "No end position"
-   return $ TileMapInfo tMap (M.fromLists tMap) startTileVal endTileVal emptyTileVal fullTileVal startPos endPos
-
-
---findTile/findTileEither
-
-findTile :: (Eq a) => a -> TileMap a -> Maybe TileCoord3
-findTile destChar tileMap = findTile' destChar tileMap 0
-
-findTile' :: (Eq a) => a -> TileMap a -> Int -> Maybe TileCoord3
-findTile' destChar [] _         = Nothing
-findTile' destChar (row:rows) y =
-   let indexMaybe = elemIndex destChar row
-   in case indexMaybe of
-      Nothing -> findTile' destChar rows (y+1)
-      Just x -> Just (x, y, 0)
-
-findTileEither :: (Eq a) => a -> TileMap a -> Either String TileCoord3
-findTileEither destChar tileMap =
-   case retOption of
-      (Just x) -> (Right x)
-      Nothing -> Left "findTile failed"
-      where retOption = findTile destChar tileMap
-
-
---startTile = starting position, endTile = ending position,
---emptyTile = empty path, fullTile = occupied
---tileMapInfo@(TileMapInfo tMap tMatrix startTileVal endTileVal emptyTileVal fullTileVal startPos endPos)
-
+data TileMapInfo a =
+   TileMapInfo { tileMap :: TileMap a
+               , tileMatrix :: TileMatrix a
+               , tileStartPos :: TileCoord2
+               , tileEndPos :: TileCoord2
+               , tileIsEmpty :: (TileMatrix a -> TileCoord2 -> Bool)
+               }
 
 
 -- # findAllPaths = returns a list of all path coords
 
 findAllPaths :: (Eq a) => TileMapInfo a -> Either String [TileCoord3]
-findAllPaths tileMapInfo@(TileMapInfo tMap _ _ _ emptyTileVal _ _ _) =
+findAllPaths tileMapInfo@(TileMapInfo tMap tMatrix tStart tEnd tIsEmpty) =
    findAllPaths' tileMapInfo
-             (allEmptyTileCoords tMap emptyTileVal)
+             (allEmptyTileTileCoord3s tMap emptyTileVal)
    where
-      allEmptyTileCoords :: (Eq a) => TileMap a -> a -> [TileCoord3]
-      allEmptyTileCoords tileMap emptyTileVal =
+      allEmptyTileTileCoord3s :: (Eq a) => TileMap a -> a -> [TileCoord3]
+      allEmptyTileTileCoord3s tileMap emptyTileVal =
          foldr (\(row, y) acc -> (getEmptyRowElems y row) ++ acc) [] (zip tileMap [0..])
             where getEmptyRowElems y row =
                      foldr (\(elem, x) acc -> if elem == emptyTileVal then (x, y, 0) : acc else acc)
@@ -183,37 +128,5 @@ getShortestPath' accSteps@((accPrev@(prevX,prevY,prevZ)):accRest) pathStepList =
       else getShortestPath' (currStep : accSteps)
             $ filter (\(_,_,z_) -> z_ < currZ) pathStepList
 
-
-------
-
-
-
---Matrix with character of chr'd numbers for paths (to get step number, use ord (M.getElem x y map) (ord z) - 300)
-getMatrixMapChrPaths tileMap goodPath =
-   let matrixMap = M.fromLists tileMap
-   in helper' matrixMap goodPath
-      where helper' mMap [] = mMap
-            helper' mMap ((y,x,z):xs) = helper' (M.setElem (chr $ 300+z) (x+1, y+1) mMap) xs
-
-
-kkDigit x = if x > 9 then '0' else intToDigit x
-
---Matrix with character digits of numbers for path
-displayMatrixMapPaths :: TileMap Char
-                      -> [TileCoord3]
-                      -> Either String (TileMatrix Char)
-displayMatrixMapPaths tileMap goodPath =
-   let matrixMap = M.fromLists tileMap
-   in Right $ helper' matrixMap goodPath
-      where helper' mMap [] = mMap
-            helper' mMap ((y,x,z):xs) = helper' (M.setElem (kkDigit z) (x+1, y+1) mMap) xs
-
-pathFinder :: (Eq a) => [[a]] -> a -> a -> a -> a -> Either String [(Int, Int, Int)]
-pathFinder tMap startElement endElement emptyElement fullElement =
-   let allPathsSteps = tileMapToInfo tMap startElement endElement emptyElement fullElement
-                       >>= findAllPaths
-   in helper' allPathsSteps
-      where helper' (Left x) = Left x
-            helper' (Right x) = getShortestPath x
 
 

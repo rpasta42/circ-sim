@@ -109,11 +109,11 @@ tileMapInfo :: Either String (TileMapInfo Char)
 tileMapInfo = tileMapToInfo getTileMap 's' 'o' '.' 'x'
 
 --list of all possible map paths
-allPathsStepList :: Either String [Coord]
+allPathsStepList :: Either String [TileCoord3]
 allPathsStepList = tileMapInfo >>= findAllPaths
 
 --list of shortest paths
-shortestPathsStepList :: Either String [Coord]
+shortestPathsStepList :: Either String [TileCoord3]
 shortestPathsStepList = allPathsStepList >>= getShortestPath
 
 --display matrix with all paths
