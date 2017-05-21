@@ -2,7 +2,8 @@ module Utils (
    extractEither
  , extractJust
  , matrixReplace
- , matrixFilter
+ , matrixFilter1
+ , matrixFilter2
  , ShapeCoord
  , TileCoord2
  , TileCoord3
@@ -31,11 +32,11 @@ type TileMatrix a = M.Matrix a
 -- # stuff for matrix
 
 
-matrixFilter :: M.Matrix a -> (a -> Bool) -> [(Int, Int)]
-matrixFilter m pred = reverse $ matrixFilter' m pred 1 1 []
+matrixFilter1 :: M.Matrix a -> (a -> Bool) -> [(Int, Int)]
+matrixFilter1 m pred = reverse $ matrixFilter1' m pred 1 1 []
 
-matrixFilter' m pred x y acc
-   | x > M.nrows m = matrixFilter' m pred 1 (y+1) acc
+matrixFilter1' m pred x y acc
+   | x > M.nrows m = matrixFilter1' m pred 1 (y+1) acc
    | y > M.ncols m = acc
    | otherwise =
       let elem = M.getElem x y m
@@ -43,7 +44,22 @@ matrixFilter' m pred x y acc
           newAcc = if goodElem
                    then (y,x) : acc
                    else acc
-      in matrixFilter' m pred (x+1) y newAcc
+      in matrixFilter1' m pred (x+1) y newAcc
+
+
+matrixFilter2 :: M.Matrix a -> (M.Matrix a -> (Int,Int) -> Bool) -> [(Int, Int)]
+matrixFilter2 m pred = reverse $ matrixFilter2' m pred 1 1 []
+
+matrixFilter2' m pred x y acc
+   | x > M.nrows m = matrixFilter2' m pred 1 (y+1) acc
+   | y > M.ncols m = acc
+   | otherwise =
+      let goodElem = pred m x y
+          newAcc = if goodElem
+                   then (y,x) : acc
+                   else acc
+      in matrixFilter2' m pred (x+1) y newAcc
+
 
 
 --Matrix Replace: replace part of matrix with another
@@ -78,7 +94,7 @@ mReplace' drawGrid drawElem
 -- ## tests:
 
 
--- # matrixReplace
+-- # matrixReplace test
 
 ml1 = [ "aaaaaaaaa"
       , "aaaaaaaaa"
@@ -98,7 +114,7 @@ m3 = matrixReplace m1 m2 (1, 1, 3, 2)
 m4 = matrixReplace m1 m2 (4, 2, 6, 4)
 
 
--- # matrixFilter
+-- # matrixFilter test
 
 filterMatrixLst =
    [ [30, 4, 5]
@@ -109,13 +125,13 @@ filterMatrixLst =
 
 filterMatrix = M.fromLists filterMatrixLst
 
-filteredM1 = matrixFilter filterMatrix
+filteredM1 = matrixFilter1 filterMatrix
                          (\x -> x == 2)
---[(3,2), (1,4)]
+--[(1,4), (3,2)]
 
 
-filteredM2 = matrixFilter filterMatrix
+filteredM2 = matrixFilter1 filterMatrix
                           (\x -> x > 5)
---[(3,4), (2,3), (
+--[(1,1), (1,3), (2,2), (2,3), (3,4)]
 
 

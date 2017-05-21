@@ -15,36 +15,28 @@ data TileMapInfo a =
 findAllPaths :: (Eq a) => TileMapInfo a -> Either String [TileCoord3]
 findAllPaths tileMapInfo@(TileMapInfo tMap tMatrix tStart tEnd tIsEmpty) =
    findAllPaths' tileMapInfo
-             (allEmptyTileTileCoord3s tMap emptyTileVal)
+                 (getEmptyTileCoords tMatrix tIsEmpty)
    where
-      allEmptyTileTileCoord3s :: (Eq a) => TileMap a -> a -> [TileCoord3]
-      allEmptyTileTileCoord3s tileMap emptyTileVal =
-         foldr (\(row, y) acc -> (getEmptyRowElems y row) ++ acc) [] (zip tileMap [0..])
-            where getEmptyRowElems y row =
-                     foldr (\(elem, x) acc -> if elem == emptyTileVal then (x, y, 0) : acc else acc)
-                           []
-                           (zip row [0..])
+      getEmptyTileCoords :: (Eq a) => TileMatrix a -> (TimeMatrix a -> TileCoord2 -> Bool) -> [TileCoord2]
+      getEmptyTileCoords tileMatrix isEmpty = matrixFilter2 tileMatrix isEmpty
 
 
-findAllPaths' :: (Eq a) => TileMapInfo a -> [TileCoord3] -> Either String [TileCoord3]
-findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos endPos) emptyTileTileCoord3s = helper [endPos] 0 1
+findAllPaths' :: (Eq a) => TileMapInfo a -> [TileCoord2] -> Either String [TileCoord3]
+findAllPaths' (TileMapInfo tMap tMatrix tStartPos@(startX, startY) tEndPos@(endX, endY) tIsEmpty) emptyTileCoords =
+   helper [endPos] 0 1
    where
-      haveFinishTileCoord3 coords endTileCoord3@(x,y,_) =
+      haveFinishTileCoord coords endCoord@(x,y,_) =
          foldr (\(x_,y_,_) acc -> if x_ == x && y_ == y then True else acc)
          False
          coords
 
       findAdjacent :: (Eq a) => TileMatrix a -> TileCoord3 -> [a] -> a -> [TileCoord3]
       findAdjacent tileMap adjacentTo@(x, y, z) nonFullTile fullTile =
-         let --topLeft = (x-1, y-1, z+1)
-             midLeft = (x-1, y,   z+1)
-             --botLeft = (x-1, y+1, z+1)
+         let midLeft = (x-1, y,   z+1)
              topMid  = (x,   y-1, z+1)
              botMid  = (x,   y+1, z+1)
-             --topRight= (x+1, y-1, z+1)
              midRight= (x+1, y,   z+1)
-             --botRight= (x+1, y+1, z+1)
-         in filter (not . isBad) [midLeft, topMid, botMid, midRight] --, botLeft, topLeft, topRight, botRight]
+         in filter (not . isBad) [midLeft, topMid, botMid, midRight]
             where isBad (x, y, _) =
                      let tileContents = M.getElem (y+1) (x+1) tileMap
                      in (x < 0 || y < 0 || x > (M.ncols tileMap - 1) || y > (M.ncols tileMap - 1) ||
@@ -61,7 +53,7 @@ findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPo
          in length leftOverTileCoord3s == 0
 
       helper coords nextPosIndex currZ =
-         if haveFinishTileCoord3 coords startPos
+         if haveFinishTileCoord coords tStartPos
          then Right coords
          else if (allEmptyChecked coords emptyTileTileCoord3s) -- || (nextPosIndex > 2)
               then Left "No path"
