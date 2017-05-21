@@ -1,9 +1,22 @@
 module Utils (
-   mReplace
+   extractEither
+ , extractJust
+ , mReplace
  , ShapeCoord
 ) where
 
 import qualified Data.Matrix as M
+
+
+-- # generic stuff
+
+extractEither (Left y) = error y
+extractEither (Right y) = y
+
+extractJust (Just y) = y
+
+
+-- # stuff for matrix replace
 
 --stores top left and bottom right corners
 type ShapeCoord = (Int, Int, Int, Int)
@@ -52,5 +65,7 @@ m2 = M.fromLists ml2
 
 m3 = mReplace m1 m2 (1, 1, 3, 2)
 m4 = mReplace m1 m2 (4, 2, 6, 4)
+
+
 
 
