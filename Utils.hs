@@ -18,10 +18,6 @@ import qualified Data.Matrix as M
 
 -- # generic stuff
 
-data EitherError a b = EeLeft [a] | EeRight b
-instance Functor (EitherError a) where
-   fmap _ val@(EeLeft x) = EeLeft x
-   fmap f (EeRight x) = EeRight $ f x
 
 
 type CircError = String
