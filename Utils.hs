@@ -1,16 +1,16 @@
-module Utils (
-   extractEither
- , extractJust
- , matrixReplace
- , matrixFilter1
- , matrixFilter2
- , ShapeCoord
- , TileCoord2
- , TileCoord3
- , TileMap
- , TileMatrix
- , listSingletonExtract
- , listHasAtLeast1
+module Utils
+( extractEither
+, extractJust
+, matrixReplace
+, matrixFilter1
+, matrixFilter2
+, ShapeCoord
+, TileCoord2
+, TileCoord3
+, TileMap
+, TileMatrix
+, listSingletonExtract
+, listHasAtLeast1
 ) where
 
 import qualified Data.Matrix as M

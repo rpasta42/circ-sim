@@ -176,6 +176,8 @@ findAdjacent tData adjacentTo@(x, y, z) =
                   ||  (not $ isCoordEmpty tMatrix (x_, y_) || isCoordStart tMatrix (x_, y_))
 
 
+--coord3Eq/coord2To3/maxCoordByZ
+
 --compares x,y and excludes z
 coord3Eq :: TileCoord3 -> TileCoord3 -> Bool
 coord3Eq (x1, y1, _) (x2, y2, _) = x1 == x2 && y1 == y2

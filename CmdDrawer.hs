@@ -11,8 +11,6 @@ import DrawGrid
 import qualified Data.Matrix as M
 import qualified Data.Text as T
 
-
-
 circuitWidth = 30 --100
 circuitHeight = 30 --100
 
@@ -20,6 +18,8 @@ drawCircuit :: (Num a) => Circuit a b -> DrawGrid
 drawCircuit (Circuit {elements=elems_draw_data}) =
    let circ_elems = map fst elems_draw_data
    in drawCircuit' circ_elems [] $ newDrawGrid circuitWidth circuitHeight
+
+
 
 drawCircuit' :: (Num a)
              => [CircuitElement a] -> [ShapeCoord] -> DrawGrid
@@ -29,6 +29,7 @@ drawCircuit' [] _ drawGrid = drawGrid
 drawCircuit' circElems@(elem:restElems) drawGridCoords drawGrid =
    let (newDrawGrid, newDrawGridCoords) = drawElement drawGrid drawGridCoords elem
    in drawCircuit' restElems newDrawGridCoords newDrawGrid
+
 
 
 --adds an element to the supplied drawGrid
