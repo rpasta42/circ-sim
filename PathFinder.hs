@@ -82,9 +82,9 @@ findAllPaths tileMapInfo@(TileMapInfo tMap _ _ _ emptyTileVal _ _ _) =
 
 
 findAllPaths' :: (Eq a) => TileMapInfo a -> [TileCoord3] -> Either String [TileCoord3]
-findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos endPos) emptyTileTileCoord3s = helper [endPos] 0 1
+findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPos endPos) emptyTileTileCoords = helper [endPos] 0 1
    where
-      haveFinishTileCoord3 coords endTileCoord3@(x,y,_) =
+      haveFinishTileCoord coords endTileCoord3@(x,y,_) =
          foldr (\(x_,y_,_) acc -> if x_ == x && y_ == y then True else acc)
          False
          coords
@@ -107,18 +107,18 @@ findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPo
 
       --can do this based on number of empty and checked coords, don't need to check each one
       --allEmptyChecked checkedTileCoord3s emptyTileCoord3s = length checkedTileCoord3s >= length emptyTileCoord3s
-      allEmptyChecked checkedTileCoord3s emptyTileCoord3s =
-         let isTileCoord3InChecked coord@(x, y, _) =
+      allEmptyChecked checkedTileCoords emptyTileCoords =
+         let isTileCoordInChecked coord@(x, y, _) =
                foldr (\(x_, y_, _) acc -> if x_ == x && y_ == y then True else acc)
                      False
-                     checkedTileCoord3s
-             leftOverTileCoord3s = filter (not . isTileCoord3InChecked) emptyTileCoord3s
-         in length leftOverTileCoord3s == 0
+                     checkedTileCoords
+             leftOverTileCoords = filter (not . isTileCoordInChecked) emptyTileCoords
+         in length leftOverTileCoords == 0
 
       helper coords nextPosIndex currZ =
-         if haveFinishTileCoord3 coords startPos
+         if haveFinishTileCoord coords startPos
          then Right coords
-         else if (allEmptyChecked coords emptyTileTileCoord3s) -- || (nextPosIndex > 2)
+         else if (allEmptyChecked coords emptyTileTileCoords) -- || (nextPosIndex > 2)
               then Left "No path"
               else
                   let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
@@ -126,17 +126,17 @@ findAllPaths' (TileMapInfo tMap tMatrix startVal endVal emptyVal fullVal startPo
                                               nextPos
                                               [emptyVal, startVal] --, endVal]
                                               fullVal
-                      newTileCoord3s = coords ++ adjacent
+                      newTileCoords = coords ++ adjacent
                       isGoodWeight coord@(x, y, z) = --TODO: z>= z_ then 6th step in getTileMap1 is bad. if z>z_ then getTileMap3 fails
                         foldr (\(x_, y_, z_) acc -> if (x == x_ && y == y_ && z >= z_) then False else acc) --z >= z_
                               True
                               (delete coord coords) --newTileCoord3s) --coords) --newTileCoord3s)
-                      goodTileCoord3s = (filter isGoodWeight newTileCoord3s)
+                      goodTileCoords = (filter isGoodWeight newTileCoords)
                   --in helper goodTileCoord3s (nextPosIndex+1)
-                  in if length goodTileCoord3s == length coords && (not $ haveFinishTileCoord3 goodTileCoord3s startPos) && nextPosZ > currZ
-                     then Left $ "No new coords found length coords: " ++ (show $ length goodTileCoord3s) ++ " old z: " ++
+                  in if length goodTileCoords == length coords && (not $ haveFinishTileCoord goodTileCoords startPos) && nextPosZ > currZ
+                     then Left $ "No new coords found length coords: " ++ (show $ length goodTileCoords) ++ " old z: " ++
                                   (show $ currZ) ++ " next z:" ++ (show $ nextPosZ)
-                     else helper goodTileCoord3s (nextPosIndex+1) nextPosZ
+                     else helper goodTileCoords (nextPosIndex+1) nextPosZ
 
                   --in if null goodTileCoord3s then Right "No adjacent movable" else helper goodTileCoord3s (nextPosIndex+1)
 

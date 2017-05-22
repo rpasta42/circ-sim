@@ -1,3 +1,14 @@
+module PathFinder2
+( findAllPaths
+, tileMapInitFromMap
+, tileMapInitFromMatrix
+, TileError
+, TileMatrixPred
+, TileMatrixFuncs(TileMatrixFuncs,isTileEmpty,isTileStart,isTileEnd)
+, TileMapInfo
+, TileMapData(tileMap, tileMatrix, tileMatrixFuncs, tileMapInfo)
+) where
+
 
 import Utils
 import qualified Data.Matrix as M
@@ -5,22 +16,28 @@ import qualified Data.Matrix as M
 type TileError = String
 type TileMatrixPred a = (TileMatrix a -> TileCoord2 -> Bool)
 
-data TileMatrixFuncs a = TileMatrixFuncs { isTileEmpty :: TileMatrixPred a
-                                         , isTileStart :: TileMatrixPred a
-                                         , isTileEnd   :: TileMatrixPred a
-                                         }
+
+data TileMatrixFuncs a =
+   TileMatrixFuncs { isTileEmpty :: TileMatrixPred a
+                   , isTileStart :: TileMatrixPred a
+                   , isTileEnd   :: TileMatrixPred a
+                   }
+
+instance Show (TileMatrixFuncs a) where
+   show _ = "TileMatrixFuncs a"
+
 
 data TileMapInfo = TileMapInfo { tileStartPos :: TileCoord2
                                , tileEndPos :: TileCoord2
                                , emptyTiles :: [TileCoord2]
-                               }
+                               } deriving (Show)
 
 data TileMapData a =
    TileMapData { tileMap :: TileMap a
                , tileMatrix :: TileMatrix a
                , tileMatrixFuncs :: TileMatrixFuncs a
                , tileMapInfo :: TileMapInfo
-               }
+               } deriving (Show)
 
 
 tileMapToMatrix = M.fromLists
@@ -63,19 +80,80 @@ tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStar
 -}
 
 
+--excludes z
+coord3Eq :: TileCoord3 -> TileCoord3 -> Bool
+coord3Eq (x1, y1, _) (x2, y2, _) = x1 == x2 && y1 == y2
+
+coord2To3 :: TileCoord2 -> TileCoord3
+coord2To3 (x, y) = (x, y, 0)
 
 findAllPaths :: TileMapData a -> Either TileError [TileCoord3]
-findAllPaths tMapData@(TileMapData {tileMapInfo = tMapInfo}) =
-   findAllPaths' tMapData [tEndPos] 0 1
-      where tEndPos = tileEndPos tMapInfo
+findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
+   where tEndPos = tileEndPos $ tileMapInfo tMapData
 
-findAllPaths' :: TileMapData a -> [TileCoord3] -> Either TileError [TileCoord3]
+{-
+can do allEmptyChecked by length checkedTileCoords == length emptyTileCoords
+problem: if there's no path, allEmptyChecked will return false
+-}
+
+
+findAllPaths' :: TileMapData a -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
 findAllPaths' tData coords nextPosIndex currZ =
-   if haveFinishTileCoord coords tStartPos
-   then Right coords
-   else if (allEmptyChecked coords)
-      then Left "No path"
-      else let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
+   let tMapInfo = tileMapInfo tData
+       tMatrix = tileMatrix tData
+       tFuncs = tileMatrixFuncs tData
+       isCoordEmpty = isTileEmpty tFuncs
+       emptyCoords = emptyTiles tMapInfo
+       finishCoord@(finishX, finishY) = tileEndPos tMapInfo
+       startCoord@(startX, startY) = tileStartPos tMapInfo
+       allEmptyChecked = length coords == length emptyCoords
+
+       haveFinishTileCoord = --curried
+         foldr (\(x, y, _) acc
+                  -> if acc
+                     then True
+                     else (x == startX && y == startY))
+               True
+
+       findAdjacent :: TileCoord3 -> [TileCoord3]
+       findAdjacent adjacentTo@(x, y, z) =
+         let midLeft = (x-1, y,   z+1)
+             topMid  = (x,   y-1, z+1)
+             botMid  = (x,   y+1, z+1)
+             midRight= (x+1, y,   z+1)
+         in filter (not . isBad) [midLeft, topMid, botMid, midRight]
+            where isBad (x, y, _) =
+                     let tileContents = M.getElem (y+1) (x+1) tMatrix
+                     in x < 1 || y < 1
+                        || x > (M.ncols tMatrix - 1) || y > (M.ncols tMatrix - 1)
+                        ||  (not $ isCoordEmpty tMatrix (x, y))
+
+       doTheThing =
+          let nextCoord@(nextX, nextY, nextZ) = (coords !! nextPosIndex)
+              adjacentCoords = findAdjacent nextCoord
+              newCoords = coords ++ adjacentCoords
+              isGoodWeightZ coord@(_, _, z) =
+                foldr (\coord_@(_, _, z_) acc
+                         -> if coord3Eq coord coord_ && z > z_ then False else acc)
+                      True
+                      coords --TODO: (delete coord coords)  and z >= z_
+              goodCoords = filter isGoodWeightZ newCoords
+          in if length goodCoords == length coords
+                && (not $ haveFinishTileCoord goodCoords)
+                && nextZ > currZ
+             then Left $ "No new coords found"
+                         ++ "; length coords: " ++ (show $ length goodCoords)
+                         ++ "; old z: " ++ (show currZ)
+                         ++ "; next z: " ++ (show nextZ)
+             else findAllPaths' tData goodCoords (nextPosIndex+1) nextZ
+
+   in if haveFinishTileCoord coords
+      then Right coords
+      else if allEmptyChecked
+           then Left "no path found"
+           else doTheThing
+
+
 
 
 {-

@@ -1,7 +1,11 @@
+
+import qualified Data.Matrix as M
+--import qualified PathFinder as PF1
+import qualified PathFinder2 as PF2
+
 import PathFinder
 import Utils
 
-import qualified Data.Matrix as M
 
 
 getTileMap1 :: TileMap Char
@@ -100,10 +104,26 @@ getTileMap6 = [
    ]
 
 
-
--- #test code
-
 getTileMap = getTileMap1
+
+
+
+-- #test code PF2
+
+
+tileMatrixFuncs =
+   PF2.TileMatrixFuncs { PF2.isTileEmpty = \m (x,y) -> M.getElem x y m == '.'
+                       , PF2.isTileStart = \m (x,y) -> M.getElem x y m == 's'
+                       , PF2.isTileEnd   = \m (x,y) -> M.getElem x y m == 'o'
+                       }
+
+tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
+tileMapPaths = tileMapData >>= PF2.findAllPaths
+
+
+
+-- #test code PF1
+
 
 tileMapInfo :: Either String (TileMapInfo Char)
 tileMapInfo = tileMapToInfo getTileMap 's' 'o' '.' 'x'
@@ -126,15 +146,15 @@ shortestPathsStepMatrix = shortestPathsStepList
 
 originalMatrixMap = M.fromLists getTileMap --original map
 
-main = do print "Path list:"
-          print allPathsStepList
-          print "all steps matrix:"
-          print allPathsStepMatrix
-          print "shortest path map:"
-          print shortestPathsStepMatrix
-          print "original map:"
-          print originalMatrixMap
-          return 0
+main1 = do print "Path list:"
+           print allPathsStepList
+           print "all steps matrix:"
+           print allPathsStepMatrix
+           print "shortest path map:"
+           print shortestPathsStepMatrix
+           print "original map:"
+           print originalMatrixMap
+           return 0
 
 --findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
 
