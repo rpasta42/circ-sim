@@ -110,7 +110,6 @@ getTileMap = getTileMap2
 
 -- #test code PF2
 
-
 tileMatrixFuncs =
    PF2.TileMatrixFuncs { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == '.'
                        , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
@@ -119,7 +118,7 @@ tileMatrixFuncs =
 
 tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
 tileMapPaths = tileMapData >>= PF2.findAllPaths
-
+shortestPath = tileMapPaths >>= PF2.getShortestPath
 
 --debug:
 isEmpty = PF2.isTileEmpty tileMatrixFuncs
@@ -133,12 +132,19 @@ tMatrix = PF2.tileMatrix tileMapData'
 --PF2.findAdjacent tileMapData' (3, 9, 0)
 --    (3,8) shouldn't be here
 
-allPathsStepMatrixPF2 = do --PF2.displayMatrixMapPaths <$> tileMapData <*> tileMapPaths
+allPathsMatrixPF2 = do --PF2.displayMatrixMapPaths <$> tileMapData <*> tileMapPaths
    tMapData <- tileMapData
    tMapPaths <- tileMapPaths
-   PF2.displayMatrixMapPaths tMapData tMapPaths
+   PF2.displayPaths tMapData tMapPaths
 
-(Right allPathsStepMatrixPF2') = allPathsStepMatrixPF2
+(Right allPathsMatrixPF2') = allPathsMatrixPF2
+
+shortestPathMatrixPF2 = do
+   tMapData <- tileMapData
+   shortestPath' <- shortestPath
+   PF2.displayPaths tMapData shortestPath'
+
+(Right shortestPathMatrixPF2') = shortestPathMatrixPF2
 
 -- #test code PF1
 

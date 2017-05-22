@@ -2,7 +2,7 @@ module PathFinder2
 ( findAllPaths
 , getShortestPath
 , findAdjacent --debug
-, displayMatrixMapPaths
+, displayPaths
 , tileMapInitFromMap
 , tileMapInitFromMatrix
 , TileError
@@ -147,10 +147,10 @@ getShortestPath pathStepList@(_:_) = helper' [] pathStepList
 
 kkDigit x = if x > 9 then '0' else intToDigit x
 
-displayMatrixMapPaths :: TileMapData Char
-                      -> [TileCoord3]
-                      -> Either String (TileMatrix Char)
-displayMatrixMapPaths tData goodPath =
+displayPaths :: TileMapData Char
+             -> [TileCoord3]
+             -> Either String (TileMatrix Char)
+displayPaths tData goodPath =
    let tMatrix = tileMatrix tData
        tMap = tileMap tData
    in Right $ helper' tMatrix goodPath
