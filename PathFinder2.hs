@@ -29,30 +29,22 @@ tileMatrixToMap = M.toLists
 tileMapInitFromMap tileMap = tileMapInit tileMap (tileMapToMatrix tileMap)
 tileMapInitFromMatrix tileMatrix = tileMapInit (tileMatrixToMap tileMatrix)
 
-tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a -> Either TileError (TileMapData a)
-tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStart isTileEnd) =
-   do tileStartPos <- listSingletonExtract $ matrixFilter2 tileMatrix isTileStart
-      tileEndPos <- listSingletonExtract $ matrixFilter2 tileMatrix isTileEnd
-      emptyTiles <- listHasAtLeast1 $ matrixFilter2 tileMatrix isTileEmpty
-      return $ TileMapData tileMap tileMatrix tileFuncs (TileMapInfo tileStartPos tileEndPos emptyTiles)
+
+tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a
+            -> Either TileError (TileMapData a)
+
+tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isEmptyT isStartT isEndT) =
+   do tileStartPos <- listSingletonExtract $ matrixFilter2 tileMatrix isStart
+      tileEndPos <- listSingletonExtract $ matrixFilter2 tileMatrix isEnd
+      emptyTiles <- listHasAtLeast1 $ matrixFilter2 tileMatrix isEmpty
+      return $ TileMapData tileMap tileMatrix tileFuncs
+                           $ TileMapInfo tileStartPos tileEndPos emptyTiles
+         where isEmpty = isTileEmpty tileFuncs
+               isStart = isTileStart tileFuncs
+               isEnd   = isTileEnd tileFuncs
 
 
 {-
-   if length tileStartPos' /= 1 --TODO: how to format this better
-   then Left "tileStartPos incorrect length"
-   else if length tileEndPos' /= 1
-        then Left "tileEndPos incorrect length"
-        else if length emptyTiles <= 1
-             then Left "bad emptyTiles length"
-             else let tileStartPos = Prelude.head tileStartPos'
-                      tileEndPos = Prelude.head tileEndPos'
-                  in Right $ TileMapData tileMap tileMatrix tileFuncs (TileMapInfo tileStartPos tileEndPos emptyTiles)
-   where tileStartPos' = matrixFilter2 tileMatrix isTileStart
-         tileEndPos' = matrixFilter2 tileMatrix isTileEnd
-         emptyTiles = matrixFilter2 tileMatrix isTileEmpty
-
-
-
 tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a -> Either TileError (TileMapData a)
 tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStart isTileEnd) =
    if length tileStartPos' /= 1 --TODO: how to format this better
@@ -67,13 +59,15 @@ tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStar
    where tileStartPos' = matrixFilter2 tileMatrix isTileStart
          tileEndPos' = matrixFilter2 tileMatrix isTileEnd
          emptyTiles = matrixFilter2 tileMatrix isTileEmpty
+
+-}
+
+
+{-
 
 findAllPaths :: TileMapData a -> Either TileError [TileCoord3]
 findAllPaths tMapData@(TileMapData tMap tMatrix tFuncs tMapInfo@(TileMapInfo tStartPos tEndPos tEmpty)) =
    findAllPaths' tMapData [tEndPos] 0 1
-
-findAllPaths' _ _ _ _ = Left "ha"
-
 
 findAllPaths' tData coords nextPosIndex currZ =
    if haveFinishTileCoord coords tStartPos
@@ -82,7 +76,6 @@ findAllPaths' tData coords nextPosIndex currZ =
       then Left "No path"
       else let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
 
-{ -
 
 getEmptyTileCoords :: (Eq a) => TileMatrix a -> (TimeMatrix a -> TileCoord2 -> Bool) -> [TileCoord2]
 getEmptyTileCoords tileMatrix isEmpty = matrixFilter2 tileMatrix isEmpty

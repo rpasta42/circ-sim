@@ -18,8 +18,6 @@ import qualified Data.Matrix as M
 
 -- # generic stuff
 
-
-
 type CircError = String
 
 listSingletonExtract :: [a] -> Either CircError a
