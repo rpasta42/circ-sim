@@ -33,7 +33,7 @@ tileMapInitFromMatrix tileMatrix = tileMapInit (tileMatrixToMap tileMatrix)
 tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a
             -> Either TileError (TileMapData a)
 
-tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isEmptyT isStartT isEndT) =
+tileMapInit tileMap tileMatrix tileFuncs =
    do tileStartPos <- listSingletonExtract $ matrixFilter2 tileMatrix isStart
       tileEndPos <- listSingletonExtract $ matrixFilter2 tileMatrix isEnd
       emptyTiles <- listHasAtLeast1 $ matrixFilter2 tileMatrix isEmpty
@@ -63,12 +63,13 @@ tileMapInit tileMap tileMatrix tileFuncs@(TileMatrixFuncs isTileEmpty isTileStar
 -}
 
 
-{-
 
 findAllPaths :: TileMapData a -> Either TileError [TileCoord3]
-findAllPaths tMapData@(TileMapData tMap tMatrix tFuncs tMapInfo@(TileMapInfo tStartPos tEndPos tEmpty)) =
+findAllPaths tMapData@(TileMapData {tileMapInfo = tMapInfo}) =
    findAllPaths' tMapData [tEndPos] 0 1
+      where tEndPos = tileEndPos tMapInfo
 
+findAllPaths' :: TileMapData a -> [TileCoord3] -> Either TileError [TileCoord3]
 findAllPaths' tData coords nextPosIndex currZ =
    if haveFinishTileCoord coords tStartPos
    then Right coords
@@ -76,6 +77,8 @@ findAllPaths' tData coords nextPosIndex currZ =
       then Left "No path"
       else let (nextPos@(nextPosX, nextPosY, nextPosZ)) = (coords !! nextPosIndex)
 
+
+{-
 
 getEmptyTileCoords :: (Eq a) => TileMatrix a -> (TimeMatrix a -> TileCoord2 -> Bool) -> [TileCoord2]
 getEmptyTileCoords tileMatrix isEmpty = matrixFilter2 tileMatrix isEmpty
