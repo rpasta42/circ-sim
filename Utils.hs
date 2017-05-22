@@ -9,12 +9,32 @@ module Utils (
  , TileCoord3
  , TileMap
  , TileMatrix
+ , listSingletonExtract
+ , listHasAtLeast1
 ) where
 
 import qualified Data.Matrix as M
 
 
 -- # generic stuff
+
+data EitherError a b = EeLeft [a] | EeRight b
+instance Functor (EitherError a) where
+   fmap _ val@(EeLeft x) = EeLeft x
+   fmap f (EeRight x) = EeRight $ f x
+
+
+type CircError = String
+
+listSingletonExtract :: [a] -> Either CircError a
+listSingletonExtract lst
+   | length lst == 1    = Right $ Prelude.head lst
+   | otherwise          = Left "list Singleton extraction failed"
+
+listHasAtLeast1 :: [a] -> Either CircError [a]
+listHasAtLeast1 lst
+   | length lst >= 1    = Right lst
+   | otherwise          = Left "listHasAtLeast1Extract: less than 1 in the list"
 
 extractEither (Left y) = error y
 extractEither (Right y) = y
