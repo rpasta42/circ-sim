@@ -87,7 +87,7 @@ findAdjacent tData adjacentTo@(x, y, z) =
              isBad (x_, y_, _) =
                      x_ < 1 || y_ < 1
                   || x_ > (M.ncols tMatrix - 1) || y_ > (M.nrows tMatrix - 1)
-                  ||  (not $ isCoordEmpty tMatrix (y_, x_) || isCoordStart tMatrix (y_, x_))
+                  ||  (not $ isCoordEmpty tMatrix (x_, y_) || isCoordStart tMatrix (x_, y_))
 
 
 findAllPaths' :: TileMapData a -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]

@@ -65,12 +65,12 @@ matrixFilter2 :: M.Matrix a -> (M.Matrix a -> (Int,Int) -> Bool) -> [(Int, Int)]
 matrixFilter2 m pred = reverse $ matrixFilter2' m pred 1 1 []
 
 matrixFilter2' m pred x y acc
-   | x > M.nrows m = matrixFilter2' m pred 1 (y+1) acc
-   | y > M.ncols m = acc
+   | x > M.ncols m = matrixFilter2' m pred 1 (y+1) acc
+   | y > M.nrows m = acc
    | otherwise =
       let goodElem = pred m (x, y) --this is reversed
           newAcc = if goodElem
-                   then (y,x) : acc
+                   then (x,y) : acc
                    else acc
       in matrixFilter2' m pred (x+1) y newAcc
 
