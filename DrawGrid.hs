@@ -1,18 +1,20 @@
 module DrawGrid (
-   DrawGrid(DrawGridChar, DrawGridInt)
+   DrawGrid(DrawGridChar, DrawGridInt, getCharGrid, getIntGrid)
  , gridNumRows
  , gridNumCols
  , newDrawGrid
  , overwriteGrid
  , drawGridToDisplayStr
+ , strToDrawGrid
 ) where
 
 import Utils
 import qualified Data.Matrix as M
 import qualified Data.List as L
+import qualified Data.Text as T
 
-data DrawGrid = DrawGridChar (M.Matrix Char)
-              | DrawGridInt (M.Matrix Int)
+data DrawGrid = DrawGridChar { getCharGrid :: M.Matrix Char }
+              | DrawGridInt { getIntGrid :: M.Matrix Int }
                   deriving (Show)
 
 gridNumRows :: DrawGrid -> Int
@@ -32,9 +34,19 @@ newDrawGrid x y = DrawGridChar . M.fromLists
 overwriteGrid :: DrawGrid -> DrawGrid -> ShapeCoord -> DrawGrid
 --overwriteGrid drawGrid drawElem drawCoord
 overwriteGrid (DrawGridChar drawGrid) (DrawGridChar drawElem) drawCoord =
-   DrawGridChar (mReplace drawGrid drawElem drawCoord)
+   DrawGridChar (matrixReplace drawGrid drawElem drawCoord)
 
 drawGridToDisplayStr (DrawGridChar x) = M.toLists x
 --drawGridToDisplayStr (DrawGridInt x) = M.toLists x
+
+
+--------- ####
+
+
+strToDrawGrid :: String -> DrawGrid
+strToDrawGrid str =
+   let lines = map T.unpack $ T.split (\x -> x == '\n') (T.pack str)
+   in DrawGridChar $ M.fromLists lines --newDrawing 10 10
+
 
 

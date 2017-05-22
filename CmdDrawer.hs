@@ -1,6 +1,5 @@
 module CmdDrawer (
   drawCircuit
-, elToAscii --for testing
 ) where
 
 -- Command Line Drawer - converts circuit to Matrix
@@ -8,11 +7,11 @@ module CmdDrawer (
 import Circuit
 import Utils
 import DrawGrid
+import DrawerHelper
 import qualified Data.Matrix as M
-import qualified Data.Text as T
 
-circuitWidth = 30 --100
-circuitHeight = 30 --100
+circuitWidth = 20 --100
+circuitHeight = 20 --100
 
 drawCircuit :: (Num a) => Circuit a b -> DrawGrid
 drawCircuit (Circuit {elements=elems_draw_data}) =
@@ -42,7 +41,7 @@ drawElement drawGrid
                             , element=el
                             , terminal1=t1
                             , terminal2=t2}) =
-   let newElement = elToAscii el
+   let newElement = elToAsciiGrid el
    in addElementToGrid newElement drawGrid drawGridCoords
 
 
@@ -66,30 +65,5 @@ addElementToGrid drawElement drawGrid drawGridCoords =
        newGrid = overwriteGrid drawGrid drawElement newShapeCoords
    in (newGrid, newShapeCoords : drawGridCoords)
 
-
-
---translate element to ASCII code
-
-elToAscii :: (Num a) => Element a -> DrawGrid
-
-elToAscii (EnergySourceElement source) = strToDrawGrid "\
-   \+===+\n\
-   \|=+=|\n\
-   \|===|\n\
-   \|=-=|\n\
-   \+===+"
-
-elToAscii (ResistorElement resistanceElem) = strToDrawGrid "\
-   \+=========+\n\
-   \|=-/\\/\\/-=|\n\
-   \+=========+"
-
-elToAscii (WireElement wireElem) = strToDrawGrid "----"
-
-
-strToDrawGrid :: String -> DrawGrid
-strToDrawGrid str =
-   let lines = map T.unpack $ T.split (\x -> x == '\n') (T.pack str)
-   in DrawGridChar $ M.fromLists lines --newDrawing 10 10
 
 

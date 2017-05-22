@@ -1,6 +1,7 @@
 import Circuit
-import CmdDrawer
 import DrawGrid
+import CmdDrawer
+import DrawerHelper
 
 circuit = newCircuit
 
@@ -29,6 +30,10 @@ resultDrawing = drawCircuit circuit'
 resultStr = drawGridToDisplayStr resultDrawing
 resultIO = do
    mapM_ putStrLn resultStr
+
+--getShapeData $ elToPathGrid $ element battery'
+
+
 
 --let battery = EnergySourceElement (VoltageSource 5)
 --let resistor = ResistorElement $ Resistor 5

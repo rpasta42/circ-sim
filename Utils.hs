@@ -4,6 +4,7 @@ module Utils
 , matrixReplace
 , matrixFilter1
 , matrixFilter2
+, matrixMap
 , ShapeCoord
 , TileCoord2
 , TileCoord3
@@ -34,6 +35,7 @@ extractEither (Left y) = error y
 extractEither (Right y) = y
 
 extractJust (Just y) = y
+
 
 -- # Path finder
 type TileCoord2 = (Int, Int)
@@ -73,6 +75,30 @@ matrixFilter2' m pred x y acc
                    then (x,y) : acc
                    else acc
       in matrixFilter2' m pred (x+1) y newAcc
+
+
+matrixMap :: M.Matrix a
+          -> (a -> TileCoord2 -> M.Matrix a -> M.Matrix b -> b)
+          -> b
+          -> M.Matrix b
+matrixMap m mapFunc defaultVal =
+   matrixMap' m mapFunc 1 1
+              (M.matrix (M.nrows m)
+                        (M.ncols m)
+                        (\(x,y) -> defaultVal))
+
+matrixMap' :: M.Matrix a
+           -> (a -> TileCoord2 -> M.Matrix a -> M.Matrix b -> b)
+           -> Int -> Int
+           -> M.Matrix b
+           -> M.Matrix b
+matrixMap' m f x y accM
+   | x > M.ncols m = matrixMap' m f 1 (y+1) accM
+   | y > M.nrows m = accM
+   | otherwise     =
+      let mappedElem = f (M.getElem y x m) (x, y) m accM
+          newAccM = M.setElem mappedElem (y, x) accM
+      in matrixMap' m f (x+1) y newAccM
 
 
 
