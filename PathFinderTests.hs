@@ -104,7 +104,7 @@ getTileMap6 = [
    ]
 
 
-getTileMap = getTileMap1
+getTileMap = getTileMap2
 
 
 
@@ -112,14 +112,26 @@ getTileMap = getTileMap1
 
 
 tileMatrixFuncs =
-   PF2.TileMatrixFuncs { PF2.isTileEmpty = \m (x,y) -> M.getElem x y m == '.'
-                       , PF2.isTileStart = \m (x,y) -> M.getElem x y m == 's'
-                       , PF2.isTileEnd   = \m (x,y) -> M.getElem x y m == 'o'
+   PF2.TileMatrixFuncs { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == '.'
+                       , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
+                       , PF2.isTileEnd   = \m (x,y) -> M.getElem y x m == 'o'
                        }
 
 tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
 tileMapPaths = tileMapData >>= PF2.findAllPaths
 
+
+--debug:
+isEmpty = PF2.isTileEmpty tileMatrixFuncs
+(Right tileMapData') = tileMapData
+tMatrix = PF2.tileMatrix tileMapData'
+
+--tileMapData
+--tileMapPaths
+--isEmpty tMatrix (3, 8) --returns True???
+--PF2.findAdjacent tileMapData' (4, 9, 0)
+--PF2.findAdjacent tileMapData' (3, 9, 0)
+--    (3,8) shouldn't be here
 
 
 -- #test code PF1
