@@ -53,7 +53,7 @@ matrixFilter1' m pred x y acc
    | x > M.nrows m = matrixFilter1' m pred 1 (y+1) acc
    | y > M.ncols m = acc
    | otherwise =
-      let elem = M.getElem x y m --backwards
+      let elem = M.getElem x y m --TODO: backwards
           goodElem = pred elem
           newAcc = if goodElem
                    then (y,x) : acc
@@ -68,7 +68,7 @@ matrixFilter2' m pred x y acc
    | x > M.ncols m = matrixFilter2' m pred 1 (y+1) acc
    | y > M.nrows m = acc
    | otherwise =
-      let goodElem = pred m (x, y) --this is reversed
+      let goodElem = pred m (x, y)
           newAcc = if goodElem
                    then (x,y) : acc
                    else acc

@@ -133,6 +133,12 @@ tMatrix = PF2.tileMatrix tileMapData'
 --PF2.findAdjacent tileMapData' (3, 9, 0)
 --    (3,8) shouldn't be here
 
+allPathsStepMatrixPF2 = do --PF2.displayMatrixMapPaths <$> tileMapData <*> tileMapPaths
+   tMapData <- tileMapData
+   tMapPaths <- tileMapPaths
+   PF2.displayMatrixMapPaths tMapData tMapPaths
+
+(Right allPathsStepMatrixPF2') = allPathsStepMatrixPF2
 
 -- #test code PF1
 
@@ -158,15 +164,15 @@ shortestPathsStepMatrix = shortestPathsStepList
 
 originalMatrixMap = M.fromLists getTileMap --original map
 
-main1 = do print "Path list:"
-           print allPathsStepList
-           print "all steps matrix:"
-           print allPathsStepMatrix
-           print "shortest path map:"
-           print shortestPathsStepMatrix
-           print "original map:"
-           print originalMatrixMap
-           return 0
+main = do print "Path list:"
+          print allPathsStepList
+          print "all steps matrix:"
+          print allPathsStepMatrix
+          print "shortest path map:"
+          print shortestPathsStepMatrix
+          print "original map:"
+          print originalMatrixMap
+          return 0
 
 --findAdjacent (M.fromLists getTileMap) (3, 8, 0) ['.', 's', 'o'] 'x'
 
