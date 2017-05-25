@@ -6,6 +6,7 @@ module DrawerHelper
 , ShapeData(ShapeData, getShapeCoord, getShapeTerminals)
 , getConnectedElements
 , circuitToLayout
+, arrangeShapeData
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 --, newCircuitLayout
 ) where
@@ -52,12 +53,16 @@ data ShapeConnectionData a =
 type CircuitLayout a = [ShapeConnectionData a]
 
 
---arrangeShapeData :: [ShapeData]
---                 -> TileCoord2 (dimensions) -> TileCoord2 (padding)
---                 -> Either CircError [TileCoord2]
+{- arrangeShapeData
+arrangeShapeData :: [ShapeData]
+                 -> TileCoord2 (dimensions) -> TileCoord2 (padding)
+                 -> Either CircError [TileCoord2]
 --takes a list of shapeDatas, dimensions and padding
 --and returns a list of each shape's x and y origins
---helper takes [[TileCoord2]] for each row
+--helper takes [[TileCoord2]] for already layed-out rows
+--and uses [TileCoord2] too keep track of current row
+-}
+
 arrangeShapeData :: [ShapeData]
                  -> TileCoord2 -> TileCoord2
                  -> Either CircError [TileCoord2]
@@ -97,7 +102,7 @@ arrangeShapeData shapes
    in helper' shapes paddingX paddingY [] []
 
 
-{-
+
 circuitLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
 circuitLayoutToGrid cLayout width height = helper' cLayout
                                                    (newDrawGrid width height)
@@ -105,9 +110,10 @@ circuitLayoutToGrid cLayout width height = helper' cLayout
          helper [] = DrawGrid
          helper (x:xs) =
          --helper layout grid
--}
 
---takes a drawing of an element and returns it's dimensions and terminal coords
+
+--takes a drawing of an element and returns
+--its dimensions and terminal coords
 drawGridToShapeData :: DrawGrid -> ShapeData
 drawGridToShapeData shape =
    ShapeData (0, 0, gridNumCols shape, gridNumRows shape)
@@ -115,6 +121,8 @@ drawGridToShapeData shape =
              shape
 
 
+--newShapeCoonnectiondata: takes circuitElement and
+--tuple with terminals and creates ShapeConnectionData
 newShapeConnectionData :: CircuitElement a -> ([String], [String])
                        -> ShapeConnectionData a
 newShapeConnectionData circEl (t1Connections, t2Connections) =
@@ -129,6 +137,7 @@ newShapeConnectionData circEl (t1Connections, t2Connections) =
                           , getConnectedShapeNamesT2 = t2Connections
                           }
 
+--
 circuitToLayout :: Circuit a b -> Either CircError (CircuitLayout a)
 circuitToLayout circ =
    let circElems = map fst $ elements circ
@@ -144,10 +153,11 @@ circuitToLayout circ =
             circElems
 
 
---getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
-
+{- getConnectedElements
+getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
 --basically goes through list and finds out which elements are connected
---getConnectedElements :: Circuit a b -> [[String]]
+-}
+
 getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
 getConnectedElements circ =
    let circElems = map fst $ elements circ
@@ -173,10 +183,10 @@ getConnectedElems' circElems@(x:xs) nameMap =
 
 
 
---translate element to ASCII code
 
 -----------------
 
+--translate element to ASCII code
 getElAscii :: Element a -> String --z and y means it's endpoint
 
 getElAscii (EnergySourceElement source) = "\
