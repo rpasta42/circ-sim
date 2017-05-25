@@ -53,6 +53,13 @@ data ShapeConnectionData a =
 type CircuitLayout a = [ShapeConnectionData a]
 
 
+data ArrangedShape = ArrangedShape
+   { getArrangedCoords :: [TileCoord2]
+   , getArrangedName :: String
+   , getArrangedConnectionsT1 :: [String]
+   , getArrangedConnectionsT2 :: [String]
+   }
+
 {- arrangeShapeData
 arrangeShapeData :: [ShapeData]
                  -> TileCoord2 (dimensions) -> TileCoord2 (padding)
@@ -101,11 +108,15 @@ arrangeShapeData shapes
                          ((newX, currY) : currRowCoords)
    in helper' shapes paddingX paddingY [] []
 
+type WireCoord = [tileCoord2]
+cLayoutGetWireCoords :: CircuitLayout a -> [WireCoord]
+cLayoutGetWireCoords cLayout =
+   let shapeDatas = map getShapeData cLayout
+       layoutCoords = arrangeShapeData shapeDatas
 
-
-circuitLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
-circuitLayoutToGrid cLayout width height = helper' cLayout
-                                                   (newDrawGrid width height)
+cLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
+cLayoutToGrid cLayout width height = helper' cLayout
+                                             (newDrawGrid width height)
    where helper :: CircuitLayout a -> DrawGrid -> DrawGrid
          helper [] = DrawGrid
          helper (x:xs) =
@@ -137,7 +148,7 @@ newShapeConnectionData circEl (t1Connections, t2Connections) =
                           , getConnectedShapeNamesT2 = t2Connections
                           }
 
---
+--Takes a Circuit and returns "Either CircError (CircuitLayout a)"
 circuitToLayout :: Circuit a b -> Either CircError (CircuitLayout a)
 circuitToLayout circ =
    let circElems = map fst $ elements circ
