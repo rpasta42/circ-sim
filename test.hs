@@ -24,12 +24,18 @@ resistor' = resistor3
 
 circuit' = addCircuitElements newCircuit [battery', positiveWire', negativeWire', resistor']
 
-
+--CmdDrawer.hs
 resultDrawing = drawCircuit circuit'
 
 resultStr = drawGridToDisplayStr resultDrawing
 resultIO = do
    mapM_ putStrLn resultStr
+
+--DrawerHelper.hs
+gridDimensions = (100, 100)
+gridPadding = (5,5)
+layout = circuitToLayout circuit' gridDimensions gridPadding
+grid = layout >>= cLayoutGetWireCoords gridDimensions gridPadding
 
 --getShapeData $ elToPathGrid $ element battery'
 

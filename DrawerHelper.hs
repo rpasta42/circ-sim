@@ -9,6 +9,7 @@ module DrawerHelper
 , arrangeShapeData
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 --, newCircuitLayout
+, cLayoutGetWireCoords
 ) where
 
 import Utils
@@ -55,6 +56,7 @@ type CircuitLayout a = [ShapeConnectionData a] --TODO: dimensions should be stor
 
 --dimensions: (100, 100) padding: (5, 5)
 
+{-
 cLayoutGetWireCoords :: CircuitLayout a -> TileCoord2 -> TileCoord2 -> [TileCoord2]
 cLayoutGetWireCoords cLayout dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) =
    let helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
@@ -71,7 +73,6 @@ cLayoutGetWireCoords cLayout dimensions@(gridWidth, gridHeight) padding@(padding
    in matrixFilter1 (getCharGrid drawnLines) (\ x -> x == '*')
 
 
-{-
 cLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
 cLayoutToGrid cLayout width height = helper' cLayout
                                              (newDrawGrid width height)
@@ -80,6 +81,23 @@ cLayoutToGrid cLayout width height = helper' cLayout
          helper (x:xs) =
          --helper layout grid
 -}
+
+cLayoutGetWireCoords :: TileCoord2 -> TileCoord2 -> CircuitLayout a -> Either CircError DrawGrid
+cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) cLayout =
+   let helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
+       helper' [] grid = grid
+       helper' (x:xs) grid =
+         let (ShapeConnectionData shapeData circuitElement shapeName conT1 conT2 (Just arrangedCoord)) = x
+             (ShapeData shapeCoord shapeTerminals shapeGrid) = shapeData
+             (x1, y1, x2, y2) = shapeCoord --dimensions of empty
+             (offsetX, offsetY) = arrangedCoord
+             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX, y2+offsetY) --layout on actual grid
+         in --instead of passing shapeGrid, we can generate x by x square grid with full characters
+            overwriteGrid grid shapeGrid newShapeCoord
+       drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
+   in Right $ drawnLines
+
+
 
 -- circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (circuitLayout a)
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
