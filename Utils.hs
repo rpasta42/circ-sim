@@ -1,6 +1,7 @@
 module Utils
 ( extractEither
 , extractJust
+, isJust
 , matrixReplace
 , matrixFilter1
 , matrixFilter2
@@ -12,6 +13,7 @@ module Utils
 , TileMatrix
 , listSingletonExtract
 , listHasAtLeast1
+, CircError
 ) where
 
 import qualified Data.Matrix as M
@@ -36,6 +38,9 @@ extractEither (Right y) = y
 
 extractJust (Just y) = y
 
+isJust :: Maybe a -> Bool
+isJust (Just _) = True
+isJust Nothing = False
 
 -- # Path finder
 type TileCoord2 = (Int, Int)

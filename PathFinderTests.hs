@@ -110,11 +110,11 @@ getTileMap = getTileMap2
 
 -- #test code PF2
 
-tileMatrixFuncs =
-   PF2.TileMatrixFuncs { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == '.'
-                       , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
-                       , PF2.isTileEnd   = \m (x,y) -> M.getElem y x m == 'o'
-                       }
+tileMatrixFuncs = PF2.TileMatrixFuncs
+      { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == '.'
+      , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
+      , PF2.isTileEnd   = \m (x,y) -> M.getElem y x m == 'o'
+      }
 
 tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
 tileMapPaths = tileMapData >>= PF2.findAllPaths

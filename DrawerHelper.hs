@@ -2,11 +2,12 @@ module DrawerHelper
 ( getElAscii
 , elToAsciiGrid
 , elToPathGrid
-, getShapeData
+, drawGridToShapeData
 , ShapeData(ShapeData, getShapeCoord, getShapeEndPoints)
-, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 , getConnectedElements
-, newCircuitLayout
+, circuitToLayout
+--, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
+--, newCircuitLayout
 ) where
 
 import Utils
@@ -26,22 +27,102 @@ ShapeData { getShapeCoord = (0,0,5,5)
 
 data ShapeData = ShapeData { getShapeCoord :: ShapeCoord
                            , getShapeEndPoints :: [TileCoord2]
+                           , getShapeGrid :: DrawGrid
                            } deriving (Show)
 
-getShapeData :: DrawGrid -> ShapeData
-getShapeData shape =
+getShapeWidth :: ShapeData -> Int
+getShapeWidth s =
+   let (x1, _, x2, _) = getShapeCoord s
+      in x2 - x1
+
+getShapeHeight :: SHapeData -> Int
+getShapeHeight s =
+   let (_, y1, _, y2) = getShapeCoord s
+   in y2 - y1
+
+data ShapeConnectionData a =
+   ShapeConnectionData { getShapeData :: ShapeData
+                       , getCircuitElement :: CircuitElement a
+                       , getShapeName :: String
+                       , getConnectedShapeNamesT1 :: [String]
+                       , getConnectedShapeNamesT2 :: [String]
+                       } deriving (Show)
+
+type CircuitLayout a = [ShapeConnectionData a]
+
+--takes a list of shapeDatas and dimensions
+--and returns a list of each shape's x and y origins
+arrangeShapeData :: [ShapeData]
+                 -> TileCoord2 -> TileCoord2
+                 -> Either CircError [TileCoord2]
+
+arrangeShapeData shapes
+                 dimensions@(width, height)
+                 padding@(paddingX, paddingY) = helper' shapes 1 1
+
+   where helper' :: [ShapeData] -> Int -> Int -> [TileCoord2]
+                 -> Either CircError [TileCoord2]
+         helper' [] currX currY accCoords =
+            foldr
+            | currX > width || currY > height =
+               let msg = "circuit doesn't fit in given grid dimensions"
+                         ++ (show width, show height)
+               in Left msg
+
+         helper' shapes@(x:xs) currX currY acc
+            | currX > width || currY > height =
+               let msg = "circuit doesn't fit in given grid dimensions"
+                         ++ (show width, show height)
+               in Left msg
+            let shapeWidth = getShapeWidth x
+                shapeHeight = getShapeHeight x
+            in
+
+circuitLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
+circuitLayoutToGrid cLayout width height = helper' cLayout
+                                                   (newDrawGrid width height)
+   where helper :: CircuitLayout a -> DrawGrid -> DrawGrid
+         helper [] = DrawGrid
+         helper (x:xs) =
+         --helper layout grid
+
+drawGridToShapeData :: DrawGrid -> ShapeData
+drawGridToShapeData shape =
    ShapeData (0, 0, gridNumCols shape, gridNumRows shape)
              (matrixFilter1 (getCharGrid shape) (\x -> x == '+' || x == '-'))
+             shape
 
 
-data CircuitLayout a =
-   CircuitLayout { getLayoutElements :: [(ShapeData, CircuitElement a)]
-                 , getConnectedPointCoords :: [(TileCoord2, TileCoord2)]
-                 , getConnectedPointNames :: [(String, String)]
-                 }
+newShapeConnectionData :: CircuitElement a -> ([String], [String])
+                       -> ShapeConnectionData a
+newShapeConnectionData circEl (t1Connections, t2Connections) =
+   let circElName = circuitElementName circEl
+       el = element circEl
+       shapeDrawGrid = elToPathGrid el
+       shapeData = drawGridToShapeData shapeDrawGrid
+   in ShapeConnectionData { getShapeData = shapeData
+                          , getCircuitElement = circEl
+                          , getShapeName = circElName
+                          , getConnectedShapeNamesT1 = t1Connections
+                          , getConnectedShapeNamesT2 = t2Connections
+                          }
+
+circuitToLayout :: Circuit a b -> Either CircError (CircuitLayout a)
+circuitToLayout circ =
+   let circElems = map fst $ elements circ
+       connectedElems = getConnectedElements circ
+   in foldr (\circEl acc
+               -> let name = circuitElementName circEl
+                      maybeConnections = Map.lookup name connectedElems
+                  in if isJust maybeConnections
+                     then let connections = extractJust maybeConnections
+                          in fmap ((:) (newShapeConnectionData circEl connections)) acc
+                     else Left "can't find name in connectedElems")
+            (Right [])
+            circElems
 
 
---getConnectedElements
+--getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
 
 --basically goes through list and finds out which elements are connected
 --getConnectedElements :: Circuit a b -> [[String]]
@@ -67,26 +148,6 @@ getConnectedElems' circElems@(x:xs) nameMap =
                            (connectedToT1Names, connectedToT2Names)
                            nameMap
    in getConnectedElems' xs newMap
-
-
-newCircuitLayout :: CircuitLayout a
-newCircuitLayout = CircuitLayout { getLayoutElements = []
-                                 , getConnectedPointCoords = []
-                                 , getConnectedPointNames = []
-                                 }
-
-
-layoutCircuit :: Circuit a b -> CircuitLayout a
-layoutCircuit (Circuit {elements=elems}) =
-   let circElems = map fst elems
-   in layoutCircuit' circElems newCircuitLayout
-
---layoutCircuit' elems circLayout
-layoutCircuit' [] circLayout = circLayout
---layoutCircuit'
-
-
-
 
 
 
@@ -136,7 +197,8 @@ getElAscii (WireElement wireElem) = "+====-"
 -----------------
 
 --drawer for figuring out wire paths
-elToPathGrid :: (Num a) => Element a -> DrawGrid
+--elToPathGrid :: (Num a) => Element a -> DrawGrid
+elToPathGrid :: Element a -> DrawGrid
 elToPathGrid = strToDrawGrid . getElAscii
 
 
