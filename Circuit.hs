@@ -1,5 +1,5 @@
 module Circuit
-( Terminal(Terminal, TerminalByName)
+( Terminal(Terminal, TerminalByName, terminals, terminalNames)
 , CircuitElement(CircuitElement, circuitElementName, element, terminal1, terminal2)
 , Element(EnergySourceElement, ResistorElement, WireElement)
 , DrawData(DrawData, positions)
@@ -35,9 +35,12 @@ data EnergySource a = VoltageSource { voltage :: a }
 
 data Resistor a = Resistor { resistance :: a } deriving (Show)
 
+data Splitter = Splitter deriving (Show)
+
 data Element a = EnergySourceElement { source :: EnergySource a }
                | ResistorElement { resistor :: Resistor a }
                | WireElement { wire :: Wire a }
+               | SplitterElement { splitter :: Splitter }
                  deriving (Show)
 
 data CircuitElement a = CircuitElement { circuitElementName :: String

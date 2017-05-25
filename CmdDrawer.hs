@@ -18,8 +18,6 @@ drawCircuit (Circuit {elements=elems_draw_data}) =
    let circ_elems = map fst elems_draw_data
    in drawCircuit' circ_elems [] $ newDrawGrid circuitWidth circuitHeight
 
-
-
 drawCircuit' :: (Num a)
              => [CircuitElement a] -> [ShapeCoord] -> DrawGrid
              -> DrawGrid
