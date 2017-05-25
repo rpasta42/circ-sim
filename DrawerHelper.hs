@@ -51,41 +51,27 @@ data ShapeConnectionData a =
                        , arrangedCoord :: Maybe TileCoord2
                        } deriving (Show)
 
-type CircuitLayout a = [ShapeConnectionData a]
+type CircuitLayout a = [ShapeConnectionData a] --TODO: dimensions should be stored here
 
+--dimensions: (100, 100) padding: (5, 5)
 
-data ArrangedShape = ArrangedShape
-   { getArrangedCoord :: TileCoord2
-   , getArrangedName :: String
-   , getArrangedConnectionsT1 :: [String]
-   , getArrangedConnectionsT2 :: [String]
-   }
+cLayoutGetWireCoords :: CircuitLayout a -> TileCoord2 -> TileCoord2 -> [TileCoord2]
+cLayoutGetWireCoords cLayout dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) =
+   let helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
+       helper' [] grid = grid
+       helper' (x:xs) grid =
+         let (ShapeConnectionData shapeData circuitElement shapeName conT1 conT2 (Just arrangedCoord)) = x
+             (ShapeData shapeCoord shapeTerminals shapeGrid) = shapeData
+             (x1, y1, x2, y2) = shapeCoord --dimensions of empty
+             (offsetX, offsetY) = arrangedCoord
+             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX, y2+offsetY) --layout on actual grid
+         in --instead of passing shapeGrid, we can generate x by x square grid with full characters
+            overwriteGrid grid shapeGrid newShapeCoord
+       drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
+   in matrixFilter1 (getCharGrid drawnLines) (\ x -> x == '*')
+
 
 {-
-cLayoutToArrangedShape :: CircuitLayout a -> [TileCoord2]
-                       -> Either CircError [ArrangedShape]
-cLayoutToArrangedShape cLayout arrangedCoords =
-   let shapeData = map getShapeData cLayout
-       zipped = L.zip cLayout arrangedCoords
-   in map (\(shapeConnectionData, arrangedCoord)
-            -> ArrangedShape { getArrangedCoord = arrangedCoord
-                             , getArrangedName = getShapeName shapeConnectionData
-                             , getArrangedConnectionsT1 = getConnectedShapeNamesT1 shapeConnectionData
-                             , getArrangedConnectionsT2 = getConnectedShapeNamesT2 shapeConnectionData
-                             })
-          zipped
--}
-
-{-
-type WireCoord = [tileCoord2] --stores each pixel of a wire
-
-
-cLayoutGetWireCoords :: CircuitLayout a -> [WireCoord]
-cLayoutGetWireCoords cLayout =
-   let shapeDatas = map getShapeData cLayout
-       layoutCoords = arrangeShapeData shapeDatas
-
-
 cLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
 cLayoutToGrid cLayout width height = helper' cLayout
                                              (newDrawGrid width height)
@@ -95,15 +81,16 @@ cLayoutToGrid cLayout width height = helper' cLayout
          --helper layout grid
 -}
 
+-- circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (circuitLayout a)
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
-circuitToLayout :: Circuit a b -> Either CircError (CircuitLayout a)
-circuitToLayout circ =
+circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (CircuitLayout a)
+circuitToLayout circ dimensions padding =
    --do tmpCircLayout <- circuitToLayout' circ
    --   shapePaths <- fmap (map getShapeData) tmpCircLayout
 
    let tmpCircLayout = circuitToLayout' circ
        shapePaths = fmap (map getShapeData) tmpCircLayout
-       layoutCoords = shapePaths >>= arrangeShapeData (100, 100) (5, 5)
+       layoutCoords = shapePaths >>= arrangeShapeData dimensions padding
        zipped = L.zip <$> tmpCircLayout <*> layoutCoords
        newCircLayout = map (\(shapeConData, layoutCoord)
                               -> setShapeConnectionDataArrangedCoords shapeConData layoutCoord)
@@ -123,6 +110,7 @@ circuitToLayout' circ =
                      else Left "can't find name in connectedElems")
             (Right [])
             circElems
+
 
 
 {- arrangeShapeData
