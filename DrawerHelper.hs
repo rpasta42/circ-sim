@@ -91,13 +91,11 @@ cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddi
              (ShapeData shapeCoord shapeTerminals shapeGrid) = shapeData
              (x1, y1, x2, y2) = shapeCoord --dimensions of empty
              (offsetX, offsetY) = arrangedCoord
-             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX, y2+offsetY) --layout on actual grid
+             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX-1, y2+offsetY-1) --layout on actual grid
          in --instead of passing shapeGrid, we can generate x by x square grid with full characters
-            overwriteGrid grid shapeGrid newShapeCoord
+            helper' xs $ overwriteGrid grid shapeGrid newShapeCoord
        drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
    in Right $ drawnLines
-
-
 
 -- circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (circuitLayout a)
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
@@ -155,7 +153,11 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
          let accCoordsFlat = (L.concat accCoords) ++ currRow
              maxX = coord2MaxX accCoordsFlat
              maxY = coord2MaxY accCoordsFlat
-             errMsg = "circuit doesn't fit in given grid dimensions"
+             errMsg = "circuit doesn't fit in given grid dimensions:  "
+                      ++ " maxX: " ++ (show maxX)
+                      ++ " maxY: " ++ (show maxY)
+                      ++ " gridWidth: " ++ (show gridWidth)
+                      ++ " gridHeight: " ++ (show gridHeight)
          in if maxX >= gridWidth || maxY >= gridHeight
             then Left errMsg
             else Right accCoordsFlat
@@ -166,7 +168,7 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
              newX = shapeWidth + paddingX + currX
              --newY = shapeHeight + paddingY + currY
              currRowMaxHeight = coord2MaxY currRowCoords
-         in if newX > gridWidth
+         in if newX >= gridWidth
             then helper' shapes
                          paddingX
                          (currY + currRowMaxHeight + paddingY)

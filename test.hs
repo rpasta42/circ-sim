@@ -32,10 +32,20 @@ resultIO = do
    mapM_ putStrLn resultStr
 
 --DrawerHelper.hs
-gridDimensions = (100, 100)
+gridDimensions = (40, 20)
 gridPadding = (5,5)
 layout = circuitToLayout circuit' gridDimensions gridPadding
 grid = layout >>= cLayoutGetWireCoords gridDimensions gridPadding
+resultStr2 = drawGridToDisplayStr <$> grid
+
+resultIO2 = fmap (do x <- mapM_ putStrLn
+                     return x)
+                 resultStr2
+
+--resultIO2 = do
+--   (mapM_ putStrLn) <$> resultStr2
+
+
 
 --getShapeData $ elToPathGrid $ element battery'
 
