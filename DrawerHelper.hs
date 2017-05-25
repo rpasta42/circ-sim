@@ -3,7 +3,7 @@ module DrawerHelper
 , elToAsciiGrid
 , elToPathGrid
 , drawGridToShapeData
-, ShapeData(ShapeData, getShapeCoord, getShapeEndPoints)
+, ShapeData(ShapeData, getShapeCoord, getShapeTerminals)
 , getConnectedElements
 , circuitToLayout
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
@@ -27,7 +27,7 @@ ShapeData { getShapeCoord = (0,0,5,5)
 -}
 
 data ShapeData = ShapeData { getShapeCoord :: ShapeCoord
-                           , getShapeEndPoints :: [TileCoord2]
+                           , getShapeTerminals :: [TileCoord2]
                            , getShapeGrid :: DrawGrid
                            } deriving (Show)
 
@@ -36,7 +36,7 @@ getShapeWidth s =
    let (x1, _, x2, _) = getShapeCoord s
       in x2 - x1
 
-getShapeHeight :: SHapeData -> Int
+getShapeHeight :: ShapeData -> Int
 getShapeHeight s =
    let (_, y1, _, y2) = getShapeCoord s
    in y2 - y1
@@ -51,9 +51,12 @@ data ShapeConnectionData a =
 
 type CircuitLayout a = [ShapeConnectionData a]
 
+
+--arrangeShapeData :: [ShapeData]
+--                 -> TileCoord2 (dimensions) -> TileCoord2 (padding)
+--                 -> Either CircError [TileCoord2]
 --takes a list of shapeDatas, dimensions and padding
 --and returns a list of each shape's x and y origins
-
 --helper takes [[TileCoord2]] for each row
 arrangeShapeData :: [ShapeData]
                  -> TileCoord2 -> TileCoord2
@@ -67,26 +70,34 @@ arrangeShapeData shapes
 
        helper' [] currX currY accCoords currRow =
          let accCoordsFlat = (L.concat accCoords) ++ currRow
-             maxX = foldr (\ (x,_) acc -> if x > acc then x else acc)
-                          0
-                          accCoordsFlat
-             maxY = foldr (\(_,y) acc -> if y > acc then y else acc)
-                          0
-                          accCoordsFlat
+             maxX = coord2MaxX accCoordsFlat
+             maxY = coord2MaxY accCoordsFlat
              errMsg = "circuit doesn't fit in given grid dimensions"
          in if maxX >= gridWidth || maxY >= gridHeight
             then Left errMsg
             else Right accCoordsFlat
 
-       helper' shapes@(s:xs) currX currY accCoords =
+       helper' shapes@(s:xs) currX currY accCoords currRowCoords =
          let shapeWidth = getShapeWidth s
              shapeHeight = getShapeHeight s
              newX = shapeWidth + paddingX + currX
-             newY = shapeHeight + paddingY + currY
+             --newY = shapeHeight + paddingY + currY
+             currRowMaxHeight = coord2MaxY currRowCoords
          in if newX > gridWidth
-            then
-   in helper' shapes 1 1 [] []
+            then helper' shapes
+                         paddingX
+                         (currY + currRowMaxHeight + paddingY)
+                         (currRowCoords : accCoords)
+                         []
+            else helper' xs
+                         newX
+                         currY
+                         accCoords
+                         ((newX, currY) : currRowCoords)
+   in helper' shapes paddingX paddingY [] []
 
+
+{-
 circuitLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
 circuitLayoutToGrid cLayout width height = helper' cLayout
                                                    (newDrawGrid width height)
@@ -94,7 +105,9 @@ circuitLayoutToGrid cLayout width height = helper' cLayout
          helper [] = DrawGrid
          helper (x:xs) =
          --helper layout grid
+-}
 
+--takes a drawing of an element and returns it's dimensions and terminal coords
 drawGridToShapeData :: DrawGrid -> ShapeData
 drawGridToShapeData shape =
    ShapeData (0, 0, gridNumCols shape, gridNumRows shape)

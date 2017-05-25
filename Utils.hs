@@ -14,6 +14,8 @@ module Utils
 , listSingletonExtract
 , listHasAtLeast1
 , CircError
+, coord2MaxX
+, coord2MaxY
 ) where
 
 import qualified Data.Matrix as M
@@ -49,6 +51,10 @@ type TileCoord3 = (Int, Int, Int)
 type TileMap a = [[a]]
 type TileMatrix a = M.Matrix a
 
+coord2MaxY :: [TileCoord2] -> Int
+coord2MaxX = fst . foldr1 (\(x,_) acc@(accX,_) -> if x > accX then (x,0) else acc)
+coord2MaxX :: [TileCoord2] -> Int
+coord2MaxY = snd . foldr1 (\(_,y) acc@(_,accY) -> if y > accY then (0,y) else acc)
 
 -- # stuff for matrix
 
