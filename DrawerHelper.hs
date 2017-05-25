@@ -14,6 +14,7 @@ import Utils
 import DrawGrid
 import Circuit
 import qualified Data.Matrix as M
+import qualified Data.List as L
 import qualified Data.Map as Map
 
 {- battery:
@@ -50,33 +51,41 @@ data ShapeConnectionData a =
 
 type CircuitLayout a = [ShapeConnectionData a]
 
---takes a list of shapeDatas and dimensions
+--takes a list of shapeDatas, dimensions and padding
 --and returns a list of each shape's x and y origins
+
+--helper takes [[TileCoord2]] for each row
 arrangeShapeData :: [ShapeData]
                  -> TileCoord2 -> TileCoord2
                  -> Either CircError [TileCoord2]
 
 arrangeShapeData shapes
-                 dimensions@(width, height)
-                 padding@(paddingX, paddingY) = helper' shapes 1 1
-
-   where helper' :: [ShapeData] -> Int -> Int -> [TileCoord2]
+                 dimensions@(gridWidth, gridHeight)
+                 padding@(paddingX, paddingY) =
+   let helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2]
                  -> Either CircError [TileCoord2]
-         helper' [] currX currY accCoords =
-            foldr
-            | currX > width || currY > height =
-               let msg = "circuit doesn't fit in given grid dimensions"
-                         ++ (show width, show height)
-               in Left msg
 
-         helper' shapes@(x:xs) currX currY acc
-            | currX > width || currY > height =
-               let msg = "circuit doesn't fit in given grid dimensions"
-                         ++ (show width, show height)
-               in Left msg
-            let shapeWidth = getShapeWidth x
-                shapeHeight = getShapeHeight x
-            in
+       helper' [] currX currY accCoords currRow =
+         let accCoordsFlat = (L.concat accCoords) ++ currRow
+             maxX = foldr (\ (x,_) acc -> if x > acc then x else acc)
+                          0
+                          accCoordsFlat
+             maxY = foldr (\(_,y) acc -> if y > acc then y else acc)
+                          0
+                          accCoordsFlat
+             errMsg = "circuit doesn't fit in given grid dimensions"
+         in if maxX >= gridWidth || maxY >= gridHeight
+            then Left errMsg
+            else Right accCoordsFlat
+
+       helper' shapes@(s:xs) currX currY accCoords =
+         let shapeWidth = getShapeWidth s
+             shapeHeight = getShapeHeight s
+             newX = shapeWidth + paddingX + currX
+             newY = shapeHeight + paddingY + currY
+         in if newX > gridWidth
+            then
+   in helper' shapes 1 1 [] []
 
 circuitLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
 circuitLayoutToGrid cLayout width height = helper' cLayout
