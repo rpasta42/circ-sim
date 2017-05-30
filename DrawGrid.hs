@@ -18,7 +18,6 @@ data DrawGrid = DrawGridChar { getCharGrid :: M.Matrix Char }
               | DrawGridInt { getIntGrid :: M.Matrix Int }
                   deriving (Show)
 
---(dimensions, padding)
 data DrawGridInfo = DrawGridInfo
    { getDrawGridDimensions :: TileCoord2
    , getDrawGridPadding :: TileCoord2

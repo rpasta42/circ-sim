@@ -39,7 +39,7 @@ data ShapeData = ShapeData { getShapeCoord :: ShapeCoord
 getShapeWidth :: ShapeData -> Int
 getShapeWidth s =
    let (x1, _, x2, _) = getShapeCoord s
-      in x2 - x1
+   in x2 - x1
 
 getShapeHeight :: ShapeData -> Int
 getShapeHeight s =
@@ -84,6 +84,7 @@ cLayoutToGrid cLayout width height = helper' cLayout
          --helper layout grid
 -}
 
+--draws shapes in a grid
 cLayoutGetWireCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError DrawGrid
 cLayoutGetWireCoords drawGridInfo cLayout =
    let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions drawGridInfo
@@ -104,11 +105,27 @@ cLayoutGetWireCoords drawGridInfo cLayout =
    in Right $ drawnLines
 
 
+--ShapeData stures relative shapeCoords, this function returns absolute shape coords relative to grid
+getAbsoluteCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [TileCoord2]
+getAbsoluteCoords gridInfo cLayout =
+   let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions drawGridInfo
+       padding@(paddingX, paddingY) = getDrawGridPadding drawGridInfo
+       helper :: CircuitLayout a -> [ShapeCoord] -> [ShapeCoord]
+       helper [] acc = acc
+       helper (x:xs) acc =
+         let (ShapeConnectionData sData cElem sName conT1 conT2 (Just arrangedCoord)) = x
+             (ShapeData sCoord sTerms sGrid) = sData
+             (x1, y1, x2, y2) = sCoord
+             (offsetX, offsetY) = arrangedCoord
+             newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
+         in helper xs (newShapeCoord:acc)
+   in helper cLayout []
 
---drawElemsForPathFinder :: TileCoord2 -> TileCoord
 
 
--- circuitToLayout :: Circuit a b -> DrawGridInfo -> Either CircError (circuitLayout a)
+drawElemsForPathFinder :: TileCoord2 -> TileCoord
+
+
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
 circuitToLayout :: Circuit a b -> DrawGridInfo -> Either CircError (CircuitLayout a)
 circuitToLayout circ drawGridInfo =
@@ -143,21 +160,13 @@ circuitToLayout' circ =
 
 
 {- arrangeShapeData
-arrangeShapeData :: TileCoord2 (dimensions) -> TileCoord2 (padding)
-                 -> [ShapeData]
-                 -> Either CircError [TileCoord2]
 --takes a list of shapeDatas, dimensions and padding
 --and returns a list of each shape's x and y origins
 --helper takes [[TileCoord2]] for already layed-out rows
 --and uses [TileCoord2] too keep track of current row
 -}
-
-arrangeShapeData :: DrawGridInfo
-                 -> [ShapeData]
-                 -> Either CircError [TileCoord2]
-
-arrangeShapeData gridInfo
-                 shapes =
+arrangeShapeData :: DrawGridInfo -> [ShapeData] -> Either CircError [TileCoord2]
+arrangeShapeData gridInfo shapes =
    let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions gridInfo
        padding@(paddingX, paddingY) = getDrawGridPadding gridInfo
        helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2] -> Int
@@ -179,26 +188,21 @@ arrangeShapeData gridInfo
        helper' shapes@(s:xs) currX currY accCoords currRowCoords rowMaxHeight =
          let shapeWidth = getShapeWidth s
              shapeHeight = getShapeHeight s
-
              newX = paddingX + currX
-             newXEnd = newX + (shapeWidth)
-             --newY = shapeHeight + paddingY + currY
-
-             --newCurrRowMaxHeight = coord2MaxY newCurrRowCoords
+             newXEnd = newX + shapeWidth
              newCurrRowMaxHeight = max shapeHeight rowMaxHeight
-
-             --tmp for debug:
-             currRowMaxHeight = coord2MaxY currRowCoords
-
-             tmpDebug = trace ("new X: " ++ (show newX)
+             tmpDebug = 0
+             {-tmpDebug = trace ("new X: " ++ (show newX)
                                ++ "\tnew X End:" ++ (show newXEnd)
                                ++ "\tshapeWidth: " ++ (show shapeWidth)
-                               ++ "\tmaxWidth: " ++ (show gridWidth))
+                               ++ "\tmaxWidth: " ++ (show gridWidth)
+                               ++ "\tpaddingX: " ++ (show paddingX)
+                               ++ "\tpaddingY: " ++ (show paddingY))-}
 
                               0
          in if newXEnd + 1 + tmpDebug >= gridWidth
             then helper' shapes
-                         paddingX
+                         0
                          (currY + newCurrRowMaxHeight + paddingY)
                          ((reverse currRowCoords) : accCoords)
                          []
@@ -206,10 +210,10 @@ arrangeShapeData gridInfo
             else helper' xs
                          (newX + shapeWidth) --newXEnd
                          currY
-                         accCoords --kk: hard bug was on next line: newX instead of newX-shapeWidth
+                         accCoords
                          ((newX, currY) : currRowCoords)
                          newCurrRowMaxHeight
-   in helper' shapes paddingX paddingY [] [] 0
+   in helper' shapes 0 paddingY [] [] 0
 
 
 --newShapeCoonnectiondata: takes circuitElement and

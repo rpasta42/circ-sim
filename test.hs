@@ -24,7 +24,17 @@ getTestCircuit1 = do
 
       return circuit
 
+getTestCircuit2 :: (Num b, Num a) => Maybe (Circuit a b)
+getTestCircuit2 = do
+   circuit <- getTestCircuit1
+   let secondBattery = newVoltageSource "battery2" 10
+   let thirdBattery = newVoltageSource "battery3" 5
+   circuit <- return $ addCircuitElements circuit [secondBattery, thirdBattery]
+   return circuit
 
+
+
+-------test1
 
 test1 = do
       circuit <- getTestCircuit1
@@ -36,28 +46,19 @@ test1 = do
 result1 = do
    mapM_ putStrLn testRet1
 
--------
+
+-------test2
 
 --testing layouts (DrawerHelper.hs)
-
-getTestCircuit2 :: (Num b, Num a) => Maybe (Circuit a b)
-getTestCircuit2 = do
-   circuit <- getTestCircuit1
-   let secondBattery = newVoltageSource "battery2" 10
-   let thirdBattery = newVoltageSource "battery3" 5
-   circuit <- return $ addCircuitElements circuit [secondBattery, thirdBattery]
-   return circuit
-
-
 
 test2 = do
    let circuitMaybe1 = getTestCircuit1
        circuitMaybe2 = getTestCircuit2
        (Just circuit) = circuitMaybe2 -- 1 or 2
-       gridPadding = (3,2)
+       gridPadding = (4,4) --(3,2)
        gridDimensions = (40, 20) --for (35,20) for cicruitMaybe1
        gridSizeInfo = (DrawGridInfo gridDimensions gridPadding)
-   gridLayout <- circuitToLayout circuit gridInfo --gridDimensions gridPadding
+   gridLayout <- circuitToLayout circuit gridSizeInfo
    gridDrawing <- cLayoutGetWireCoords gridInfo gridLayout
    resultStr <- return $ drawGridToDisplayStr gridDrawing
    return resultStr
@@ -75,7 +76,7 @@ gridInfo = DrawGridInfo gridDimensions gridPadding
 
 (Just circuitTest3) = getTestCircuit2
 
-layout3 = circuitToLayout circuitTest3 gridInfo -- gridDimensions gridPadding
+layout3 = circuitToLayout circuitTest3 gridInfo
 grid3 = layout3 >>= cLayoutGetWireCoords gridInfo
 resultStr3 = drawGridToDisplayStr <$> grid3
 (Right resultStr3') = resultStr3
@@ -83,7 +84,7 @@ resultIO3 = do
    mapM_ putStrLn resultStr3'
 
 --(Left l) = layout3
---result = do putStrLn (show l)
+--resultErr = do putStrLn (show l)
 
 (Right layout3') = layout3
 shapeData3 = map getShapeData layout3'
