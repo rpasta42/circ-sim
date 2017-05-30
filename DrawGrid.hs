@@ -29,7 +29,7 @@ gridNumCols (DrawGridInt g) = M.ncols g
 newDrawGrid :: Int -> Int -> DrawGrid
 --newDrawing x y = DrawGridInt . M.fromLists $ L.replicate x (map (\_->0) [1..y])
 newDrawGrid x y = DrawGridChar . M.fromLists
-                     $ L.replicate x (map (\_->' ') [1..y])
+                     $ L.replicate y (map (\_->' ') [1..x])
 
 overwriteGrid :: DrawGrid -> DrawGrid -> ShapeCoord -> DrawGrid
 --overwriteGrid drawGrid drawElem drawCoord

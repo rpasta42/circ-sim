@@ -10,8 +10,8 @@ import DrawGrid
 import DrawerHelper
 import qualified Data.Matrix as M
 
-circuitWidth = 20 --100
-circuitHeight = 20 --100
+circuitWidth = 40 --100
+circuitHeight = 15 --100
 
 drawCircuit :: (Num a) => Circuit a b -> DrawGrid
 drawCircuit (Circuit {elements=elems_draw_data}) =

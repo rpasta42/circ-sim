@@ -168,7 +168,7 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
              newX = shapeWidth + paddingX + currX
              --newY = shapeHeight + paddingY + currY
              currRowMaxHeight = coord2MaxY currRowCoords
-         in if newX >= gridWidth
+         in if newX + 1 >= gridWidth
             then helper' shapes
                          paddingX
                          (currY + currRowMaxHeight + paddingY)
