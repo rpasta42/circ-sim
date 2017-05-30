@@ -20,6 +20,7 @@ import Circuit
 import qualified Data.Matrix as M
 import qualified Data.List as L
 import qualified Data.Map as Map
+import Debug.Trace
 
 {- battery:
 
@@ -149,10 +150,10 @@ arrangeShapeData :: TileCoord2 -> TileCoord2
 arrangeShapeData dimensions@(gridWidth, gridHeight)
                  padding@(paddingX, paddingY)
                  shapes =
-   let helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2]
+   let helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2] -> Int
                  -> Either CircError [TileCoord2]
 
-       helper' [] currX currY accCoords currRow =
+       helper' [] currX currY accCoords currRow rowMaxHeight =
          let accCoordsFlat = (L.concat accCoords) ++ currRow
              maxX = coord2MaxX accCoordsFlat
              maxY = coord2MaxY accCoordsFlat
@@ -165,24 +166,39 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
             then Left errMsg
             else Right accCoordsFlat
 
-       helper' shapes@(s:xs) currX currY accCoords currRowCoords =
+       helper' shapes@(s:xs) currX currY accCoords currRowCoords rowMaxHeight =
          let shapeWidth = getShapeWidth s
              shapeHeight = getShapeHeight s
-             newX = shapeWidth + paddingX + currX
+
+             newX = paddingX + currX
+             newXEnd = newX + shapeWidth
              --newY = shapeHeight + paddingY + currY
+
+
+             newCurrRowCoords = (newX, currY) : currRowCoords
+
+             --newCurrRowMaxHeight = coord2MaxY newCurrRowCoords
+             newCurrRowMaxHeight = max shapeHeight rowMaxHeight
+
+             --tmp for debug:
              currRowMaxHeight = coord2MaxY currRowCoords
-         in if newX + 1 >= gridWidth
+
+             tmpDebug = trace ("\nnew X:" ++ (show newX) ++ "\nmaxWidth: " ++ (show gridWidth))
+                              0
+         in if newXEnd + 1 + tmpDebug >= gridWidth
             then helper' shapes
                          paddingX
-                         (currY + currRowMaxHeight + paddingY)
+                         (currY + newCurrRowMaxHeight + paddingY)
                          (currRowCoords : accCoords)
                          []
+                         0
             else helper' xs
-                         newX
+                         newXEnd
                          currY
                          accCoords --hard bug was: newX instead of newX-shapeWidth
-                         ((newX-shapeWidth, currY) : currRowCoords)
-   in helper' shapes paddingX paddingY [] []
+                         newCurrRowCoords
+                         newCurrRowMaxHeight
+   in helper' shapes paddingX paddingY [] [] 0
 
 
 --newShapeCoonnectiondata: takes circuitElement and

@@ -16,7 +16,10 @@ getTestCircuit1 = do
       (resistor, negativeWire) <- Just $ connectElements resistor negativeWire 2 1
       (battery, negativeWire) <- Just $ connectElements battery negativeWire 2 2
 
-      circuit <- Just $ addCircuitElements circuit [battery, positiveWire, negativeWire, resistor]
+      cElements1 <- return [battery, positiveWire, negativeWire, resistor]
+      cElements2 <- return [positiveWire, battery, negativeWire, resistor]
+
+      circuit <- Just $ addCircuitElements circuit cElements2
 
       return circuit
 
@@ -40,7 +43,8 @@ getTestCircuit2 :: (Num b, Num a) => Maybe (Circuit a b)
 getTestCircuit2 = do
    circuit <- getTestCircuit1
    let secondBattery = newVoltageSource "battery2" 10
-   let circuit = addCircuitElements circuit [secondBattery]
+   let thirdBattery = newVoltageSource "battery3" 5
+   circuit <- return $ addCircuitElements circuit [secondBattery, thirdBattery]
    return circuit
 
 
@@ -48,9 +52,9 @@ getTestCircuit2 = do
 test2 = do
    let circuitMaybe1 = getTestCircuit1
        circuitMaybe2 = getTestCircuit2
-       (Just circuit) = circuitMaybe1 --or 2
+       (Just circuit) = circuitMaybe2 -- 1 or 2
        gridPadding = (3,2)
-       gridDimensions = (35, 20) --(30, 60) --(30,20), (30,40)
+       gridDimensions = (40, 20) --for (35,20) for cicruitMaybe1
    gridLayout <- circuitToLayout circuit gridDimensions gridPadding
    gridDrawing <- cLayoutGetWireCoords gridDimensions gridPadding gridLayout
    resultStr <- return $ drawGridToDisplayStr gridDrawing
@@ -64,9 +68,9 @@ result2 = do
 ----test 3 (testing circuitToLayout coords)
 
 gridPadding = (3,5)
-gridDimensions = (40, 60)
+gridDimensions = (40, 20)
 
-(Just circuitTest3) = getTestCircuit1
+(Just circuitTest3) = getTestCircuit2
 
 layout3 = circuitToLayout circuitTest3 gridDimensions gridPadding
 grid3 = layout3 >>= cLayoutGetWireCoords gridDimensions gridPadding
