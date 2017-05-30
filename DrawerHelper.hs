@@ -22,7 +22,21 @@ import Circuit
 import qualified Data.Matrix as M
 import qualified Data.List as L
 import qualified Data.Map as Map
+import qualified PathFinder2 as PF2
+
 import Debug.Trace
+
+pathFullChar = 'x'
+pathEmptyChar = ' '
+pathStartChar = 's'
+pathEndChar = 'o'
+
+tileMatrixFuncs = PF2.TileMatrixFuncs
+   { PF2.isTileEmpty = \m (x, y) -> M.getElem y x m == pathEmptyChar
+   , PF2.isTileStart = \m (x, y) -> M.getElem y x m == pathStartChar
+   , PF2.isTileEnd   = \m (x, y) -> M.getElem y x m == pathEndChar
+   }
+
 
 {- battery:
 
@@ -123,7 +137,7 @@ generatePathGrid :: DrawGridInfo -> CircuitLayout a -> DrawGrid
 generatePathGrid gridInfo cLayout =
    let shapes = map (\ shapeConnData ->
                         let shapeSize@(x1, y1, x2, y2) = getShapeCoord . getShapeData  $ shapeConnData
-                            shapeGrid = generateShapePathGrid x2 y2 'x'
+                            shapeGrid = generateShapePathGrid x2 y2 pathFullChar
                         in shapeGrid)
                     cLayout
        (Right absoluteCoords) = getAbsoluteCoords cLayout
@@ -209,13 +223,28 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
    in getConnPathCoords' xs originalCircuit newAcc
 
 
+getAllPathSteps :: DrawGrid -> TileCoord2 -> TileCoord2 -> Either CircError [TileCoord2]
+getAllPathSteps grid startCoord endCoord =
+   let matrix1 = getCharGrid grid
+       matrix2 = M.setElem pathStartChar startCoord matrix1
+       matrix3 = M.setElem pathEndChar endCoord matrix2
+       tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+       allPaths = tileMapData >>= PF2.findAllPaths
+       shortestPath3 = allPaths >>= PF2.getShortestPath
+       shortestPath2 = fmap (map (\(x,y,z) -> (x,y))) shortestPath3
+   in shortestPath2
 
 --returns pixel locations of connections to draw
-getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> [TileCoord2]
+getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [TileCoord2]
 getConnectionCoords gridInfo cLayout =
    let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
        (Right absoluteCoords) = getAbsoluteCoords cLayout
        pathGrid = generatePathGrid gridInfo cLayout
+       terminalEndpoints = getConnectionPathCoords cLayout
+       --allPaths = terminalEndpoints >>= (map (\(start, end) -> getAllPathSteps pathGrid start end))
+       allPaths = fmap listEitherToEitherList $ fmap (map (\(start, end) -> getAllPathSteps pathGrid start end)) terminalEndpoints
+
+   in fmap (concat . concat) allPaths -- $ listEitherToEitherList allPaths
 
 ------ ### end getting coordinates for path finder
 

@@ -47,7 +47,7 @@ tileMapToMatrix = M.fromLists
 tileMatrixToMap = M.toLists
 
 tileMapInitFromMap tileMap = tileMapInit tileMap (tileMapToMatrix tileMap)
-tileMapInitFromMatrix tileMatrix = tileMapInit (tileMatrixToMap tileMatrix)
+tileMapInitFromMatrix tileMatrix = tileMapInit (tileMatrixToMap tileMatrix) tileMatrix
 
 
 tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a
