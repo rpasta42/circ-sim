@@ -80,6 +80,7 @@ gridInfo = DrawGridInfo gridDimensions gridPadding
 (Just circuitTest3) = getTestCircuit2
 
 layout3 = circuitToLayout circuitTest3 gridInfo
+connectionCoords3 =  layout3 >>= getConnectionPathCoords
 grid3 = layout3 >>= cLayoutGetWireCoords gridInfo
 resultStr3 = drawGridToDisplayStr <$> grid3
 (Right resultStr3') = resultStr3

@@ -13,6 +13,7 @@ module DrawerHelper
 , cLayoutGetWireCoords --Old, removeme
 , cLayoutToGrid
 , ShapeConnectionData(getShapeData) --testing
+, getConnectionPathCoords
 ) where
 
 import Utils
@@ -187,16 +188,42 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
        currAcc = do
          negConnDatas' <- negConnDatas
          posConnDatas' <- posConnDatas
-         --TODO: this is gonna be a bug (fst part)
-         negConns <- return $ map (fst . getShapeDataConnectionCoords) negConnDatas'
-         posConns <- return $ map (fst . getShapeDataConnectionCoords) posConnDatas'
+
+
+         negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
+         posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
+
          negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
          posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
-         return $ negConnCoords ++ posConnCoords
+
+
+         return $ (negConnCoords) ++ (posConnCoords)
+
+         --negConns <- return $ map (fst . getShapeDataConnectionCoords) negConnDatas'
+         --posConns <- return $ map (fst . getShapeDataConnectionCoords) posConnDatas'
+
+         --negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
+         --posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
+
+         --negConnCoords <- return $ map (\x -> (map (\x1 -> (thisNegCon, x1)) x)) negConns
+         --posConnCoords <- return $ map (\x -> (map (\x1 -> (thisPosCon, x1)) x)) posConns
+
+         --TODO: this is gonna be a bug (fst part)
+         --negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas' --coords
+         --posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas' --coords
+
+         --negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
+         --posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
+         --return $ negConnCoords ++ posConnCoords
+
+         --negConnCoords <- return $ (thisNegCon, negConns)
+         --posConnCoords <- return $ (thisPosCon, posConns)
+         --return $ [negConnCoords, posConnCoords]
+
        newAcc = do
          acc' <- acc
          currAcc' <- currAcc
-         return acc' ++ currAcc'
+         return $ acc' ++ currAcc'
    in getConnPathCoords' xs originalCircuit newAcc
 
 
