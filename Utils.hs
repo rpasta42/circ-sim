@@ -162,7 +162,8 @@ m2 = M.fromLists ml2
 
 m3 = matrixReplace m1 m2 (1, 1, 3, 2)
 m4 = matrixReplace m1 m2 (4, 2, 6, 4)
-
+--TODO: add checks that x1<x2, y1<y2, and both are less than total grid size
+m5 = matrixReplace m1 m2 (9, 1, 11, 2)
 
 -- # matrixFilter test
 

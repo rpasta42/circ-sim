@@ -4,12 +4,14 @@ module DrawerHelper
 , elToPathGrid
 , drawGridToShapeData
 , ShapeData(ShapeData, getShapeCoord, getShapeTerminals)
+, getShapeWidth, getShapeHeight -- for tests
 , getConnectedElements
 , circuitToLayout
 , arrangeShapeData
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 --, newCircuitLayout
 , cLayoutGetWireCoords
+, ShapeConnectionData(getShapeData) --testing
 ) where
 
 import Utils
@@ -91,7 +93,8 @@ cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddi
              (ShapeData shapeCoord shapeTerminals shapeGrid) = shapeData
              (x1, y1, x2, y2) = shapeCoord --dimensions of empty
              (offsetX, offsetY) = arrangedCoord
-             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX-1, y2+offsetY-1) --layout on actual grid
+             --newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX-1, y2+offsetY-1) --layout on actual grid
+             newShapeCoord = (1+offsetX, 1+offsetY, x2+offsetX, y2+offsetY)
          in --instead of passing shapeGrid, we can generate x by x square grid with full characters
             helper' xs $ overwriteGrid grid shapeGrid newShapeCoord
        drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
@@ -177,8 +180,8 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
             else helper' xs
                          newX
                          currY
-                         accCoords
-                         ((newX, currY) : currRowCoords)
+                         accCoords --hard bug was: newX instead of newX-shapeWidth
+                         ((newX-shapeWidth, currY) : currRowCoords)
    in helper' shapes paddingX paddingY [] []
 
 

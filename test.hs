@@ -46,22 +46,39 @@ getTestCircuit2 = do
 
 
 test2 = do
-   let circuitMaybe = getTestCircuit2 --or getTestCircuit1
-       (Just circuit) = circuitMaybe
-       gridPadding = (3,5)
-       gridDimensions = (40, 60) --(30,20), (30,40)
+   let circuitMaybe1 = getTestCircuit1
+       circuitMaybe2 = getTestCircuit2
+       (Just circuit) = circuitMaybe1 --or 2
+       gridPadding = (3,2)
+       gridDimensions = (35, 20) --(30, 60) --(30,20), (30,40)
    gridLayout <- circuitToLayout circuit gridDimensions gridPadding
    gridDrawing <- cLayoutGetWireCoords gridDimensions gridPadding gridLayout
    resultStr <- return $ drawGridToDisplayStr gridDrawing
    return resultStr
 
---layout = circuitToLayout circuit2' gridDimensions gridPadding
---grid = layout >>= cLayoutGetWireCoords gridDimensions gridPadding
---resultStr2 = drawGridToDisplayStr <$> grid
---(Right resultStr2') = resultStr2
---resultIO2 = do
---   mapM_ putStrLn resultStr2'
+(Right testRet2) = test2
+result2 = do
+   mapM_ putStrLn testRet2
 
+
+----test 3 (testing circuitToLayout coords)
+
+gridPadding = (3,5)
+gridDimensions = (40, 60)
+
+(Just circuitTest3) = getTestCircuit1
+
+layout3 = circuitToLayout circuitTest3 gridDimensions gridPadding
+grid3 = layout3 >>= cLayoutGetWireCoords gridDimensions gridPadding
+resultStr3 = drawGridToDisplayStr <$> grid3
+(Right resultStr3') = resultStr3
+resultIO3 = do
+   mapM_ putStrLn resultStr3'
+
+
+(Right layout3') = layout3
+shapeData3 = map getShapeData layout3'
+shapeCoords3 = map (getShapeCoord . getShapeData) layout3'
 
 --getShapeData $ elToPathGrid $ element battery'
 
