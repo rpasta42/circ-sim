@@ -114,21 +114,22 @@ cLayoutToGrid gridInfo cLayout =
 ------ ### generating path finder grids
 
 generateShapePathGrid :: Int -> Int -> Char -> DrawGrid
-generateShapePathGrid width height elem = M.matrix height width (\(x, y) -> elem)
+generateShapePathGrid width height elem = DrawGridChar $ M.matrix height width (\(x, y) -> elem)
 
 --generates 'x' filled grid without drawing actual Circuit Elemens
 --TODO: add 'x' border around the whole grid
 generatePathGrid :: DrawGridInfo -> CircuitLayout a -> DrawGrid
 generatePathGrid gridInfo cLayout =
    let shapes = map (\ shapeConnData ->
-                        let shapeSize@(x1, y1, x2, y2) = getShapeData . getShapeCoord $ shapeConnData
+                        let shapeSize@(x1, y1, x2, y2) = getShapeCoord . getShapeData  $ shapeConnData
                             shapeGrid = generateShapePathGrid x2 y2 'x'
                         in shapeGrid)
+                    cLayout
        (Right absoluteCoords) = getAbsoluteCoords cLayout
        (gridWidth, gridHeight) = getDrawGridDimensions gridInfo
        zipped = zip absoluteCoords shapes
    in foldr (\ (shapeCoord, shapeGrid) acc ->
-                  in overwriteGrid acc shapeGrid shapeCoord)
+                  overwriteGrid acc shapeGrid shapeCoord)
             (newDrawGrid gridWidth gridHeight)
             zipped
 
@@ -137,38 +138,79 @@ generatePathGrid gridInfo cLayout =
 ------ ### getting coordinates for path finder
 
 
-findConnDataByName :: CicuitLayout a -> String -> Either CircError (ShapeConnectionData a)
-findConnDataByName [] _ = Left "findConnDataByName: couldn't find ShapeConnectionData by name"
+findConnDataByName :: CircuitLayout a -> String -> Either CircError (ShapeConnectionData a)
+findConnDataByName [] name = Left $ "findConnDataByName: couldn't find by name: " ++ name
 findConnDataByName (x:xs) name =
    if getShapeName x == name
-   then Right $ x
+   then Right x
    else findConnDataByName xs name
 
 --return (Negative Connections, Positive Connections)
 getShapeRelativeConnectionCoords :: ShapeData -> ([TileCoord2], [TileCoord2])
 getShapeRelativeConnectionCoords shapeData =
-   let shapeMatrix = getShapeGrid . getCharGrid $ shapeData
-       negConn = matrixFilter1 (\x -> x == '-') shapeMatrix
-       posConn = matrixFilter1 (\x -> x == '+') shapeMatrix
+   let shapeMatrix = getCharGrid . getShapeGrid $ shapeData
+       negConn = matrixFilter1 shapeMatrix (\x -> x == '-')
+       posConn = matrixFilter1 shapeMatrix (\x -> x == '+')
    in (negConn, posConn)
 
---returns a list of start/end connections to draw
-getConnectionPathCoords :: DrawGridInfo -> CircuitLayout a -> [(TileCoord2, TileCoord2)]
-getConnectionPathCoords gridInfo cLayout =
+getShapeAbsoluteConnectionCoords :: TileCoord2 -> ShapeData -> ([TileCoord2], [TileCoord2])
+getShapeAbsoluteConnectionCoords offset@(offsetX, offsetY) shapeData =
+   let relativeCons@(a,b) = getShapeRelativeConnectionCoords shapeData
+       relToAbsFunc (x, y) = (x+offsetX, y+offsetY)
+       a' = map relToAbsFunc a
+       b' = map relToAbsFunc b
+   in (a', b')
 
-getConnPathCoords' :: CircuitLayout a -> [(TileCoord2, TileCoord2)] -> [(TileCoord2, TileCoord2)]
-getConnPathCoords' [] acc = acc
-getConnPathCoords' (sConnData:xs) acc =
-   let negNames = getConnectedShapeNamesT1 sConnData
+getShapeDataConnectionCoords :: ShapeConnectionData a -> ([TileCoord2], [TileCoord2])
+getShapeDataConnectionCoords sConnData =
+   let shapeData = getShapeData sConnData
+       Just(thisOffset) = arrangedCoord sConnData
+   in getShapeAbsoluteConnectionCoords thisOffset shapeData
+
+--returns a list of start/end connections to draw
+getConnectionPathCoords :: CircuitLayout a
+                        -> Either CircError [(TileCoord2, TileCoord2)]
+getConnectionPathCoords cLayout = getConnPathCoords' cLayout cLayout (Right [])
+
+getConnPathCoords' :: CircuitLayout a -> CircuitLayout a
+                   -> Either CircError [(TileCoord2, TileCoord2)]
+                   -> Either CircError [(TileCoord2, TileCoord2)]
+getConnPathCoords' [] _ acc = acc
+getConnPathCoords' (sConnData:xs) originalCircuit acc =
+   let thisConns@(thisPosConns, thisNegConns) = getShapeDataConnectionCoords sConnData
+       thisPosCon = head thisPosConns
+       thisNegCon = head thisNegConns
+       negNames = getConnectedShapeNamesT1 sConnData
        posNames = getConnectedShapeNamesT2 sConnData
+       negConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) negNames
+       posConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) posNames
+       currAcc = do
+         negConnDatas' <- negConnDatas
+         posConnDatas' <- posConnDatas
+         --TODO: this is gonna be a bug (fst part)
+         negConns <- return $ map (fst . getShapeDataConnectionCoords) negConnDatas'
+         posConns <- return $ map (fst . getShapeDataConnectionCoords) posConnDatas'
+         negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
+         posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
+         return $ negConnCoords ++ posConnCoords
+       newAcc = do
+         acc' <- acc
+         currAcc' <- currAcc
+         return acc' ++ currAcc'
+   in getConnPathCoords' xs originalCircuit newAcc
+
+
+
 
 
 --returns pixel locations of connections to draw
+{-
 getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> [TileCoord2]
 getConnectionCoords gridInfo cLayout =
    let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
        (Right absoluteCoords) = getAbsoluteCoords cLayout
        pathGrid = generatePathGrid gridInfo cLayout
+-}
 
 ------ ### end getting coordinates for path finder
 

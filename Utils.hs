@@ -16,6 +16,7 @@ module Utils
 , CircError
 , coord2MaxX
 , coord2MaxY
+, listEitherToEitherList
 ) where
 
 import qualified Data.Matrix as M
@@ -34,6 +35,22 @@ listHasAtLeast1 :: [a] -> Either CircError [a]
 listHasAtLeast1 lst
    | length lst >= 1    = Right lst
    | otherwise          = Left "listHasAtLeast1Extract: less than 1 in the list"
+
+listEitherToEitherList :: [Either a b] -> Either a [b]
+listEitherToEitherList lst = helper' lst []
+   where helper' [] acc = Right acc
+         helper' ((Right x):xs) acc = helper' xs (x:acc)
+         helper' ((Left x):xs) _ = Left x
+
+{-
+listEitherToEitherList lst = helper' lst (Right [])
+   where helper' [] acc = acc
+         helper' _ (Left a) = Left a
+         helper' ((Right x):xs) (Right acc) = helper' xs $ Right (x:acc)
+         helper' ((Left x):xs) (Right acc) = Left x
+-}
+
+
 
 extractEither (Left y) = error y
 extractEither (Right y) = y
@@ -56,8 +73,8 @@ coord2MaxX = fst . foldr1 (\(x,_) acc@(accX,_) -> if x > accX then (x,0) else ac
 coord2MaxX :: [TileCoord2] -> Int
 coord2MaxY = snd . foldr1 (\(_,y) acc@(_,accY) -> if y > accY then (0,y) else acc)
 
--- # stuff for matrix
 
+-- # stuff for matrix
 
 matrixFilter1 :: M.Matrix a -> (a -> Bool) -> [(Int, Int)]
 matrixFilter1 m pred = reverse $ matrixFilter1' m pred 1 1 []
@@ -141,6 +158,8 @@ mReplace' drawGrid drawElem
       in mReplace' newGrid drawElem drawCoordGrid drawCoordElem (currX+1, currY)
 
 
+
+-- # end stuff for matrix
 
 -- ## tests:
 
