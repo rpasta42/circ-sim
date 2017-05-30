@@ -10,7 +10,8 @@ module DrawerHelper
 , arrangeShapeData
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 --, newCircuitLayout
-, cLayoutGetWireCoords
+, cLayoutGetWireCoords --Old, removeme
+, cLayoutToGrid
 , ShapeConnectionData(getShapeData) --testing
 ) where
 
@@ -57,34 +58,10 @@ data ShapeConnectionData a =
 
 type CircuitLayout a = [ShapeConnectionData a] --TODO: dimensions should be stored here
 
---dimensions: (100, 100) padding: (5, 5)
-{-
-cLayoutGetWireCoords :: CircuitLayout a -> TileCoord2 -> TileCoord2 -> [TileCoord2]
-cLayoutGetWireCoords cLayout dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) =
-   let helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
-       helper' [] grid = grid
-       helper' (x:xs) grid =
-         let (ShapeConnectionData shapeData circuitElement shapeName conT1 conT2 (Just arrangedCoord)) = x
-             (ShapeData shapeCoord shapeTerminals shapeGrid) = shapeData
-             (x1, y1, x2, y2) = shapeCoord --dimensions of empty
-             (offsetX, offsetY) = arrangedCoord
-             newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX, y2+offsetY) --layout on actual grid
-         in --instead of passing shapeGrid, we can generate x by x square grid with full characters
-            overwriteGrid grid shapeGrid newShapeCoord
-       drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
-   in matrixFilter1 (getCharGrid drawnLines) (\ x -> x == '*')
 
+------ ### Drawing circuits without connectors
 
-cLayoutToGrid :: CircuitLayout a -> Int -> Int -> DrawGrid
-cLayoutToGrid cLayout width height = helper' cLayout
-                                             (newDrawGrid width height)
-   where helper :: CircuitLayout a -> DrawGrid -> DrawGrid
-         helper [] = DrawGrid
-         helper (x:xs) =
-         --helper layout grid
--}
-
---draws shapes in a grid
+--OLD draws shapes in a grid (old version, new version is split into getAbsoluteCoords and cLayoutToGrid)
 cLayoutGetWireCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError DrawGrid
 cLayoutGetWireCoords drawGridInfo cLayout =
    let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions drawGridInfo
@@ -105,36 +82,99 @@ cLayoutGetWireCoords drawGridInfo cLayout =
    in Right $ drawnLines
 
 
---ShapeData stures relative shapeCoords, this function returns absolute shape coords relative to grid
-getAbsoluteCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [ShapeCoord]
-getAbsoluteCoords gridInfo cLayout =
+--ShapeData stores relative shapeCoords, this function returns absolute shape coords relative to draw grid
+getAbsoluteCoords :: CircuitLayout a -> Either CircError [ShapeCoord]
+getAbsoluteCoords cLayout = Right $
+   foldr (\ x acc ->
+            let (ShapeConnectionData sData cElem sName conT1 conT2 (Just arrangedCoord)) = x
+                (ShapeData sCoord sTerms sGrid) = sData
+                (x1, y1, x2, y2) = sCoord
+                (offsetX, offsetY) = arrangedCoord
+                newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
+            in newShapeCoord:acc)
+         []
+         cLayout
+
+--returns DrawGrid, without wire connectors drawn
+cLayoutToGrid :: DrawGridInfo -> CircuitLayout a -> Either CircError DrawGrid
+cLayoutToGrid gridInfo cLayout =
    let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions gridInfo
-       padding@(paddingX, paddingY) = getDrawGridPadding gridInfo
-       helper :: CircuitLayout a -> [ShapeCoord] -> [ShapeCoord]
-       helper [] acc = acc
-       helper (x:xs) acc =
-         let (ShapeConnectionData sData cElem sName conT1 conT2 (Just arrangedCoord)) = x
-             (ShapeData sCoord sTerms sGrid) = sData
-             (x1, y1, x2, y2) = sCoord
-             (offsetX, offsetY) = arrangedCoord
-             newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
-         in helper xs (newShapeCoord:acc)
-   in Right $ helper cLayout [] {-
-      foldr (\ x acc ->
-               let (ShapeConnectionData sData cElem sName conT1 conT2 (Just arrangedCoord)) = x
-                   (ShapeData sCoord sTerms sGrid) = sData
-                   (x1, y1, x2, y2) = sCoord
-                   (offsetX, offsetY) = arrangedCoord
-                   newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
-               in newShapeCoord:acc)
-            []
-            cLayout -}
+       (Right absoluteCoords) = getAbsoluteCoords cLayout
+       zippedLayout = zip absoluteCoords cLayout
+   in Right $
+      foldr (\ (sCoord, shapeConnData) acc ->
+               let (ShapeConnectionData sData cElem sName _ _ _) = shapeConnData
+                   (ShapeData sRelativeCoord sTerms sGrid) = sData
+               in overwriteGrid acc sGrid sCoord)
+            (newDrawGrid gridWidth gridHeight)
+            zippedLayout
+
+------ ### end Drawing circuits without connectors
+
+------ ### generating path finder grids
+
+generateShapePathGrid :: Int -> Int -> Char -> DrawGrid
+generateShapePathGrid width height elem = M.matrix height width (\(x, y) -> elem)
+
+--generates 'x' filled grid without drawing actual Circuit Elemens
+--TODO: add 'x' border around the whole grid
+generatePathGrid :: DrawGridInfo -> CircuitLayout a -> DrawGrid
+generatePathGrid gridInfo cLayout =
+   let shapes = map (\ shapeConnData ->
+                        let shapeSize@(x1, y1, x2, y2) = getShapeData . getShapeCoord $ shapeConnData
+                            shapeGrid = generateShapePathGrid x2 y2 'x'
+                        in shapeGrid)
+       (Right absoluteCoords) = getAbsoluteCoords cLayout
+       (gridWidth, gridHeight) = getDrawGridDimensions gridInfo
+       zipped = zip absoluteCoords shapes
+   in foldr (\ (shapeCoord, shapeGrid) acc ->
+                  in overwriteGrid acc shapeGrid shapeCoord)
+            (newDrawGrid gridWidth gridHeight)
+            zipped
+
+------ ### end generating path finder grids
+
+------ ### getting coordinates for path finder
+
+
+findConnDataByName :: CicuitLayout a -> String -> Either CircError (ShapeConnectionData a)
+findConnDataByName [] _ = Left "findConnDataByName: couldn't find ShapeConnectionData by name"
+findConnDataByName (x:xs) name =
+   if getShapeName x == name
+   then Right $ x
+   else findConnDataByName xs name
+
+--return (Negative Connections, Positive Connections)
+getShapeRelativeConnectionCoords :: ShapeData -> ([TileCoord2], [TileCoord2])
+getShapeRelativeConnectionCoords shapeData =
+   let shapeMatrix = getShapeGrid . getCharGrid $ shapeData
+       negConn = matrixFilter1 (\x -> x == '-') shapeMatrix
+       posConn = matrixFilter1 (\x -> x == '+') shapeMatrix
+   in (negConn, posConn)
+
+--returns a list of start/end connections to draw
+getConnectionPathCoords :: DrawGridInfo -> CircuitLayout a -> [(TileCoord2, TileCoord2)]
+getConnectionPathCoords gridInfo cLayout =
+
+getConnPathCoords' :: CircuitLayout a -> [(TileCoord2, TileCoord2)] -> [(TileCoord2, TileCoord2)]
+getConnPathCoords' [] acc = acc
+getConnPathCoords' (sConnData:xs) acc =
+   let negNames = getConnectedShapeNamesT1 sConnData
+       posNames = getConnectedShapeNamesT2 sConnData
+
+
+--returns pixel locations of connections to draw
+getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> [TileCoord2]
+getConnectionCoords gridInfo cLayout =
+   let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
+       (Right absoluteCoords) = getAbsoluteCoords cLayout
+       pathGrid = generatePathGrid gridInfo cLayout
+
+------ ### end getting coordinates for path finder
 
 
 
-
---drawElemsForPathFinder :: TileCoord2 -> TileCoord
-
+------ ### generating layouts from Circuit
 
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
 circuitToLayout :: Circuit a b -> DrawGridInfo -> Either CircError (CircuitLayout a)
@@ -223,6 +263,8 @@ arrangeShapeData gridInfo shapes =
                          ((newX, currY) : currRowCoords)
                          newCurrRowMaxHeight
    in helper' shapes 0 paddingY [] [] 0
+
+------ ### end generating layouts from Circuit
 
 
 --newShapeCoonnectiondata: takes circuitElement and

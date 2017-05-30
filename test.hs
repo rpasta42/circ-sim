@@ -59,7 +59,10 @@ test2 = do
        gridDimensions = (40, 20) --for (35,20) for cicruitMaybe1
        gridSizeInfo = (DrawGridInfo gridDimensions gridPadding)
    gridLayout <- circuitToLayout circuit gridSizeInfo
-   gridDrawing <- cLayoutGetWireCoords gridInfo gridLayout
+
+   gridDrawing <- cLayoutToGrid gridInfo gridLayout
+   --gridDrawing <- cLayoutGetWireCoords gridInfo gridLayout
+
    resultStr <- return $ drawGridToDisplayStr gridDrawing
    return resultStr
 

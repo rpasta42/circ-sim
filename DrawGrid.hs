@@ -23,8 +23,6 @@ data DrawGridInfo = DrawGridInfo
    , getDrawGridPadding :: TileCoord2
    }
 
-
-
 gridNumRows :: DrawGrid -> Int
 gridNumRows (DrawGridChar g) = M.nrows g
 gridNumRows (DrawGridInt g) = M.nrows g
