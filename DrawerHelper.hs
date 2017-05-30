@@ -138,7 +138,6 @@ generatePathGrid gridInfo cLayout =
 
 ------ ### getting coordinates for path finder
 
-
 findConnDataByName :: CircuitLayout a -> String -> Either CircError (ShapeConnectionData a)
 findConnDataByName [] name = Left $ "findConnDataByName: couldn't find by name: " ++ name
 findConnDataByName (x:xs) name =
@@ -146,6 +145,7 @@ findConnDataByName (x:xs) name =
    then Right x
    else findConnDataByName xs name
 
+--getShape(Relative/Absolute/Data)ConnectionCoords
 --return (Negative Connections, Positive Connections)
 getShapeRelativeConnectionCoords :: ShapeData -> ([TileCoord2], [TileCoord2])
 getShapeRelativeConnectionCoords shapeData =
@@ -168,7 +168,10 @@ getShapeDataConnectionCoords sConnData =
        Just(thisOffset) = arrangedCoord sConnData
    in getShapeAbsoluteConnectionCoords thisOffset shapeData
 
---returns a list of start/end connections to draw
+
+{- getConnectionPathCoords: returns a list of start/end connections to draw
+getConnectionPathCoords :: CircuitLayout a -> Either CircError [(TileCoord2, TileCoord2)]
+-}
 getConnectionPathCoords :: CircuitLayout a
                         -> Either CircError [(TileCoord2, TileCoord2)]
 getConnectionPathCoords cLayout = getConnPathCoords' cLayout cLayout (Right [])
@@ -189,36 +192,15 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
          negConnDatas' <- negConnDatas
          posConnDatas' <- posConnDatas
 
-
+         --TODO: this is gonna be a bug because we don't account
+         --for terminals of negConnDatas' and posConnDatas'
          negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
          posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
 
          negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
          posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
 
-
          return $ (negConnCoords) ++ (posConnCoords)
-
-         --negConns <- return $ map (fst . getShapeDataConnectionCoords) negConnDatas'
-         --posConns <- return $ map (fst . getShapeDataConnectionCoords) posConnDatas'
-
-         --negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
-         --posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
-
-         --negConnCoords <- return $ map (\x -> (map (\x1 -> (thisNegCon, x1)) x)) negConns
-         --posConnCoords <- return $ map (\x -> (map (\x1 -> (thisPosCon, x1)) x)) posConns
-
-         --TODO: this is gonna be a bug (fst part)
-         --negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas' --coords
-         --posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas' --coords
-
-         --negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
-         --posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
-         --return $ negConnCoords ++ posConnCoords
-
-         --negConnCoords <- return $ (thisNegCon, negConns)
-         --posConnCoords <- return $ (thisPosCon, posConns)
-         --return $ [negConnCoords, posConnCoords]
 
        newAcc = do
          acc' <- acc
@@ -228,16 +210,12 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
 
 
 
-
-
 --returns pixel locations of connections to draw
-{-
 getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> [TileCoord2]
 getConnectionCoords gridInfo cLayout =
    let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
        (Right absoluteCoords) = getAbsoluteCoords cLayout
        pathGrid = generatePathGrid gridInfo cLayout
--}
 
 ------ ### end getting coordinates for path finder
 
@@ -275,7 +253,6 @@ circuitToLayout' circ =
                      else Left "can't find name in connectedElems")
             (Right [])
             circElems
-
 
 
 {- arrangeShapeData
