@@ -95,7 +95,8 @@ cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddi
              (x1, y1, x2, y2) = shapeCoord --dimensions of empty
              (offsetX, offsetY) = arrangedCoord
              --newShapeCoord = (x1+offsetX, y1+offsetY, x2+offsetX-1, y2+offsetY-1) --layout on actual grid
-             newShapeCoord = (1+offsetX, 1+offsetY, x2+offsetX, y2+offsetY)
+             --newShapeCoord = (1+offsetX, 1+offsetY, x2+offsetX, y2+offsetY)
+             newShapeCoord = (1+offsetX+x1, 1+offsetY+y1, x2+offsetX, y2+offsetY)
          in --instead of passing shapeGrid, we can generate x by x square grid with full characters
             helper' xs $ overwriteGrid grid shapeGrid newShapeCoord
        drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
@@ -171,11 +172,8 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
              shapeHeight = getShapeHeight s
 
              newX = paddingX + currX
-             newXEnd = newX + shapeWidth
+             newXEnd = newX + (shapeWidth)
              --newY = shapeHeight + paddingY + currY
-
-
-             newCurrRowCoords = (newX, currY) : currRowCoords
 
              --newCurrRowMaxHeight = coord2MaxY newCurrRowCoords
              newCurrRowMaxHeight = max shapeHeight rowMaxHeight
@@ -183,20 +181,24 @@ arrangeShapeData dimensions@(gridWidth, gridHeight)
              --tmp for debug:
              currRowMaxHeight = coord2MaxY currRowCoords
 
-             tmpDebug = trace ("\nnew X:" ++ (show newX) ++ "\nmaxWidth: " ++ (show gridWidth))
+             tmpDebug = trace ("new X: " ++ (show newX)
+                               ++ "\tnew X End:" ++ (show newXEnd)
+                               ++ "\tshapeWidth: " ++ (show shapeWidth)
+                               ++ "\tmaxWidth: " ++ (show gridWidth))
+
                               0
          in if newXEnd + 1 + tmpDebug >= gridWidth
             then helper' shapes
                          paddingX
                          (currY + newCurrRowMaxHeight + paddingY)
-                         (currRowCoords : accCoords)
+                         ((reverse currRowCoords) : accCoords)
                          []
                          0
             else helper' xs
-                         newXEnd
+                         (newX + shapeWidth) --newXEnd
                          currY
-                         accCoords --hard bug was: newX instead of newX-shapeWidth
-                         newCurrRowCoords
+                         accCoords --kk: hard bug was on next line: newX instead of newX-shapeWidth
+                         ((newX, currY) : currRowCoords)
                          newCurrRowMaxHeight
    in helper' shapes paddingX paddingY [] [] 0
 

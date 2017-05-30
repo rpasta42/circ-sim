@@ -18,8 +18,9 @@ getTestCircuit1 = do
 
       cElements1 <- return [battery, positiveWire, negativeWire, resistor]
       cElements2 <- return [positiveWire, battery, negativeWire, resistor]
+      cElements3 <- return [positiveWire, resistor, battery, resistor]
 
-      circuit <- Just $ addCircuitElements circuit cElements2
+      circuit <- Just $ addCircuitElements circuit cElements1
 
       return circuit
 
@@ -67,8 +68,8 @@ result2 = do
 
 ----test 3 (testing circuitToLayout coords)
 
-gridPadding = (3,5)
-gridDimensions = (40, 20)
+gridPadding = (2,2) --(3,5)
+gridDimensions = (40, 25) --(40, 20)
 
 (Just circuitTest3) = getTestCircuit2
 
@@ -79,10 +80,14 @@ resultStr3 = drawGridToDisplayStr <$> grid3
 resultIO3 = do
    mapM_ putStrLn resultStr3'
 
+--(Left l) = layout3
+--result = do putStrLn (show l)
 
 (Right layout3') = layout3
 shapeData3 = map getShapeData layout3'
 shapeCoords3 = map (getShapeCoord . getShapeData) layout3'
+
+--map getShapeWidth shapeData3
 
 --getShapeData $ elToPathGrid $ element battery'
 
