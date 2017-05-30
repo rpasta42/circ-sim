@@ -56,8 +56,9 @@ test2 = do
        (Just circuit) = circuitMaybe2 -- 1 or 2
        gridPadding = (3,2)
        gridDimensions = (40, 20) --for (35,20) for cicruitMaybe1
-   gridLayout <- circuitToLayout circuit gridDimensions gridPadding
-   gridDrawing <- cLayoutGetWireCoords gridDimensions gridPadding gridLayout
+       gridSizeInfo = (DrawGridInfo gridDimensions gridPadding)
+   gridLayout <- circuitToLayout circuit gridInfo --gridDimensions gridPadding
+   gridDrawing <- cLayoutGetWireCoords gridInfo gridLayout
    resultStr <- return $ drawGridToDisplayStr gridDrawing
    return resultStr
 
@@ -70,11 +71,12 @@ result2 = do
 
 gridPadding = (2,2) --(3,5)
 gridDimensions = (40, 25) --(40, 20)
+gridInfo = DrawGridInfo gridDimensions gridPadding
 
 (Just circuitTest3) = getTestCircuit2
 
-layout3 = circuitToLayout circuitTest3 gridDimensions gridPadding
-grid3 = layout3 >>= cLayoutGetWireCoords gridDimensions gridPadding
+layout3 = circuitToLayout circuitTest3 gridInfo -- gridDimensions gridPadding
+grid3 = layout3 >>= cLayoutGetWireCoords gridInfo
 resultStr3 = drawGridToDisplayStr <$> grid3
 (Right resultStr3') = resultStr3
 resultIO3 = do

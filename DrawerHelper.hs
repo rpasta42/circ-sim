@@ -58,7 +58,6 @@ data ShapeConnectionData a =
 type CircuitLayout a = [ShapeConnectionData a] --TODO: dimensions should be stored here
 
 --dimensions: (100, 100) padding: (5, 5)
-
 {-
 cLayoutGetWireCoords :: CircuitLayout a -> TileCoord2 -> TileCoord2 -> [TileCoord2]
 cLayoutGetWireCoords cLayout dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) =
@@ -85,9 +84,11 @@ cLayoutToGrid cLayout width height = helper' cLayout
          --helper layout grid
 -}
 
-cLayoutGetWireCoords :: TileCoord2 -> TileCoord2 -> CircuitLayout a -> Either CircError DrawGrid
-cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddingY) cLayout =
-   let helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
+cLayoutGetWireCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError DrawGrid
+cLayoutGetWireCoords drawGridInfo cLayout =
+   let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions drawGridInfo
+       padding@(paddingX, paddingY) = getDrawGridPadding drawGridInfo
+       helper' :: CircuitLayout a -> DrawGrid -> DrawGrid
        helper' [] grid = grid
        helper' (x:xs) grid =
          let (ShapeConnectionData shapeData circuitElement shapeName conT1 conT2 (Just arrangedCoord)) = x
@@ -102,16 +103,23 @@ cLayoutGetWireCoords dimensions@(gridWidth, gridHeight) padding@(paddingX, paddi
        drawnLines = helper' cLayout $ newDrawGrid gridWidth gridHeight
    in Right $ drawnLines
 
--- circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (circuitLayout a)
+
+
+--drawElemsForPathFinder :: TileCoord2 -> TileCoord
+
+
+-- circuitToLayout :: Circuit a b -> DrawGridInfo -> Either CircError (circuitLayout a)
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
-circuitToLayout :: Circuit a b -> TileCoord2 -> TileCoord2 -> Either CircError (CircuitLayout a)
-circuitToLayout circ dimensions padding =
+circuitToLayout :: Circuit a b -> DrawGridInfo -> Either CircError (CircuitLayout a)
+circuitToLayout circ drawGridInfo =
    --do tmpCircLayout <- circuitToLayout' circ
    --   shapePaths <- fmap (map getShapeData) tmpCircLayout
 
-   let tmpCircLayout = circuitToLayout' circ
+   let dimensions = getDrawGridDimensions drawGridInfo
+       padding = getDrawGridPadding
+       tmpCircLayout = circuitToLayout' circ
        shapePaths = fmap (map getShapeData) tmpCircLayout
-       layoutCoords = shapePaths >>= arrangeShapeData dimensions padding
+       layoutCoords = shapePaths >>= arrangeShapeData drawGridInfo
        zipped = L.zip <$> tmpCircLayout <*> layoutCoords
        newCircLayout = map (\(shapeConData, layoutCoord)
                               -> setShapeConnectionDataArrangedCoords shapeConData layoutCoord)
@@ -144,14 +152,15 @@ arrangeShapeData :: TileCoord2 (dimensions) -> TileCoord2 (padding)
 --and uses [TileCoord2] too keep track of current row
 -}
 
-arrangeShapeData :: TileCoord2 -> TileCoord2
+arrangeShapeData :: DrawGridInfo
                  -> [ShapeData]
                  -> Either CircError [TileCoord2]
 
-arrangeShapeData dimensions@(gridWidth, gridHeight)
-                 padding@(paddingX, paddingY)
+arrangeShapeData gridInfo
                  shapes =
-   let helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2] -> Int
+   let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions gridInfo
+       padding@(paddingX, paddingY) = getDrawGridPadding gridInfo
+       helper' :: [ShapeData] -> Int -> Int -> [[TileCoord2]] -> [TileCoord2] -> Int
                  -> Either CircError [TileCoord2]
 
        helper' [] currX currY accCoords currRow rowMaxHeight =

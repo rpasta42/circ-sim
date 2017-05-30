@@ -1,5 +1,6 @@
 module DrawGrid (
    DrawGrid(DrawGridChar, DrawGridInt, getCharGrid, getIntGrid)
+ , DrawGridInfo(DrawGridInfo, getDrawGridDimensions, getDrawGridPadding)
  , gridNumRows
  , gridNumCols
  , newDrawGrid
@@ -16,6 +17,14 @@ import qualified Data.Text as T
 data DrawGrid = DrawGridChar { getCharGrid :: M.Matrix Char }
               | DrawGridInt { getIntGrid :: M.Matrix Int }
                   deriving (Show)
+
+--(dimensions, padding)
+data DrawGridInfo = DrawGridInfo
+   { getDrawGridDimensions :: TileCoord2
+   , getDrawGridPadding :: TileCoord2
+   }
+
+
 
 gridNumRows :: DrawGrid -> Int
 gridNumRows (DrawGridChar g) = M.nrows g
