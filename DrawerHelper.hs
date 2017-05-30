@@ -106,10 +106,10 @@ cLayoutGetWireCoords drawGridInfo cLayout =
 
 
 --ShapeData stures relative shapeCoords, this function returns absolute shape coords relative to grid
-getAbsoluteCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [TileCoord2]
+getAbsoluteCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [ShapeCoord]
 getAbsoluteCoords gridInfo cLayout =
-   let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions drawGridInfo
-       padding@(paddingX, paddingY) = getDrawGridPadding drawGridInfo
+   let dimensions@(gridWidth, gridHeight) = getDrawGridDimensions gridInfo
+       padding@(paddingX, paddingY) = getDrawGridPadding gridInfo
        helper :: CircuitLayout a -> [ShapeCoord] -> [ShapeCoord]
        helper [] acc = acc
        helper (x:xs) acc =
@@ -119,11 +119,21 @@ getAbsoluteCoords gridInfo cLayout =
              (offsetX, offsetY) = arrangedCoord
              newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
          in helper xs (newShapeCoord:acc)
-   in helper cLayout []
+   in Right $ helper cLayout [] {-
+      foldr (\ x acc ->
+               let (ShapeConnectionData sData cElem sName conT1 conT2 (Just arrangedCoord)) = x
+                   (ShapeData sCoord sTerms sGrid) = sData
+                   (x1, y1, x2, y2) = sCoord
+                   (offsetX, offsetY) = arrangedCoord
+                   newShapeCoord = (x1+offsetX+1, y1+offsetY+1, x2+offsetX, y2+offsetY)
+               in newShapeCoord:acc)
+            []
+            cLayout -}
 
 
 
-drawElemsForPathFinder :: TileCoord2 -> TileCoord
+
+--drawElemsForPathFinder :: TileCoord2 -> TileCoord
 
 
 --Takes a Circuit and returns "Either CircError (CircuitLayout a)"
@@ -193,13 +203,12 @@ arrangeShapeData gridInfo shapes =
              newCurrRowMaxHeight = max shapeHeight rowMaxHeight
              tmpDebug = 0
              {-tmpDebug = trace ("new X: " ++ (show newX)
-                               ++ "\tnew X End:" ++ (show newXEnd)
-                               ++ "\tshapeWidth: " ++ (show shapeWidth)
-                               ++ "\tmaxWidth: " ++ (show gridWidth)
-                               ++ "\tpaddingX: " ++ (show paddingX)
-                               ++ "\tpaddingY: " ++ (show paddingY))-}
-
-                              0
+                                  ++ "\tnew X End:" ++ (show newXEnd)
+                                  ++ "\tshapeWidth: " ++ (show shapeWidth)
+                                  ++ "\tmaxWidth: " ++ (show gridWidth)
+                                  ++ "\tpaddingX: " ++ (show paddingX)
+                                  ++ "\tpaddingY: " ++ (show paddingY))
+                              0-}
          in if newXEnd + 1 + tmpDebug >= gridWidth
             then helper' shapes
                          0
