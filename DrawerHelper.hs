@@ -255,9 +255,9 @@ getAllPathSteps grid startCoord@(x1,y1) endCoord@(x2,y2) =
        matrix3 = M.setElem pathEndChar endCoord' matrix2
        matrix4 = M.transpose matrix3
        --tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
-       tileMapData = trace ("matrix2: \n" ++ (L.intercalate "\n" . M.toLists $ matrix2) ++
+       tileMapData = {-trace ("matrix2: \n" ++ (L.intercalate "\n" . M.toLists $ matrix2) ++
                             "\tmatrix3: \n" ++ (L.intercalate "\n" . M.toLists $ matrix3))
-                           $ PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+                           $-} PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
 
        allPaths = tileMapData >>= PF2.findAllPaths
        shortestPath3 = allPaths >>= PF2.getShortestPath

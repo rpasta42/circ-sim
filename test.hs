@@ -14,6 +14,7 @@ getTestCircuit1 = do
       positiveWire <- Just $ newWire "wire+"
       negativeWire <- Just $ newWire "wire-"
       resistor <- Just $ newResistor "resistor" 2 --newResistorNamed
+
       (battery, positiveWire) <- Just $ connectElements battery positiveWire 1 1
       (resistor, positiveWire) <- Just $ connectElements resistor positiveWire 1 2
       (resistor, negativeWire) <- Just $ connectElements resistor negativeWire 2 1

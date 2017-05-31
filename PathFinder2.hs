@@ -74,8 +74,9 @@ tileMapInit' tileMap tileMatrix tileFuncs =
                isEnd   = isTileEnd tileFuncs
 
 
-
 --filterUnique = L.nub --L.reverse . L.nub . L.reverse
+
+--delete/replace/etc
 
 myDelete1 coord coords =
    let deleted = L.delete coord coords
@@ -96,6 +97,7 @@ myDelete4 coord coords = L.delete coord coords
 myDelete :: (Eq a) => a -> [a] -> [a]
 myDelete = myDelete2
 
+
 deleteLstIndex i lst =
    let splitted@(a,b) = splitAt i lst
        (_:secondPartB) = b
@@ -105,6 +107,8 @@ replaceLstIndex i lst newItem =
    let splitted@(a,b) = splitAt i lst
        (_:secondPartB) = b
    in a ++ (newItem:b)
+
+
 
 {-
 can do allEmptyChecked by length checkedTileCoords == length emptyTileCoords
@@ -122,12 +126,12 @@ findAdjacent tData adjacentTo@(x, y, z) =
        where tFuncs = tileMatrixFuncs tData
              tMatrix = tileMatrix tData
              isCoordEmpty = isTileEmpty tFuncs
-             isCoordStart = isTileStart tFuncs
+             isCoordEnd = isTileEnd tFuncs
              isBad (x_, y_, _) =
                      x_ < 1 || y_ < 1
                   || x_ >= (M.ncols tMatrix) || y_ >= (M.nrows tMatrix)
-                  ||  (not $ isCoordEmpty tMatrix (x_, y_)
-                  || isCoordStart tMatrix (x_, y_)) --TODO: wait...wtf is this??
+                  ||  (not $ (isCoordEmpty tMatrix (x_, y_) || isCoordEnd tMatrix (x_, y_)))
+                  -- || isCoordStart tMatrix (x_, y_)) --TODO: wait...wtf is this??
 
 
 --TODO: TileMapData should take a
@@ -153,79 +157,13 @@ findAllPaths' tData checked unchecked@(unX:unXs) =
              goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
              newUnchecked = addCoordsToCoords goodAdjacent unXs
 
-         in trace ("kk" ++ (show newUnchecked)) $ findAllPaths' tData newChecked newUnchecked
-   in if trace "hi" $ haveFinishCoord finishCoord checked
+         in {-trace ("\n\nkk unchecked:" ++ (show newUnchecked) ++ "\nnew checked" ++ (show newChecked))-}
+                  findAllPaths' tData newChecked newUnchecked
+   in if {-trace "hi" $-} haveFinishCoord finishCoord checked
       then Right checked
-      else doTheThing
-
-{-
---TODO: TileMapData should take a
-findAllPaths2' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
-findAllPaths2' tData coords nextPosIndex currZ =
-   let tMapInfo = tileMapInfo tData
-       tMatrix = tileMatrix tData
-       emptyCoords = emptyTiles tMapInfo
-       finishCoord@(finishX, finishY) = tileEndPos tMapInfo
-       startCoord@(startX, startY) = tileStartPos tMapInfo
-
-       doTheThing =
-          let nextCoord@(nextX, nextY, nextZ) = (coords !! nextPosIndex)
-              adjacentCoords = findAdjacent tData nextCoord
-              newCoords = coords ++ adjacentCoords
-
-              isGoodWeightZ (coord@(_, _, z), index) =
-                -TODO: this messes up nextPosIndex. also if we need to keep one, it deletes both
-                solutions:
-                1: calculate difference in length of newCoords and goodCoords and subtract
-                   that from nextPosIndex
-                2. (preferred) instead of deleting, we replace first coord with coord that has
-                   better index
-                -
-                foldr (\coord_@(_, _, z_) acc
-                         -> if coord3Eq coord coord_ && z > z_ then False else acc)
-                         -- -> if coord3Eq coord coord_ && z >= z_ then False else acc)
-
-                      --TODO: (L.delete coord coords)  and z >= z_ or coords and z > z_
-                      True
-                      --(myDelete coord newCoords)
-                      (deleteLstIndex index newCoords)
-
-              --goodCoords = filter isGoodWeightZ newCoords
-              goodCoords' = filter isGoodWeightZ (zip newCoords [0..])
-              goodCoords = map fst goodCoords'
-
-              --goodCoords = filter isGoodWeightZ adjacentCoords ++ coords
-
-          in if (False)  --(nextPosIndex+1 >= (length goodCoords))
-                || ((length goodCoords == length coords
-                    && (not $ haveFinishCoord startCoord goodCoords)
-                    && nextZ > currZ))
-             then Left $ ("No new coords found"
-                         ++ ";\tlength coords: " ++ (show $ length coords)
-                         ++ ";\tlength goodCoords: " ++ (show $ length goodCoords)
-                         ++ ";\told z: " ++ (show currZ)
-                         ++ ";\tnext z: " ++ (show nextZ)
-                         ++ "\ncoords: " ++ (show coords)
-                         ++ "\ngoodCoords: " ++ (show goodCoords)
-                         ++ "\ndisplay coords: \n"
-                         ++ (let (Right x) = displayPaths tData coords in L.intercalate "\n" . M.toLists $ x)
-                         ++ "\ndisplay good coords: \n"
-                         ++ (let (Right x) = displayPaths tData goodCoords in L.intercalate "\n" . M.toLists $ x))
-
-             else findAllPaths' tData goodCoords (nextPosIndex+1) nextZ
-
-   in if haveFinishCoord startCoord coords
-      then Right coords
-      else if (allEmptyChecked coords emptyCoords)
-           then Left $ "no path found"
-                       ++ "; length coords: " ++ (show $ length coords)
-                       ++ "; coords: " ++ (show coords)
-
-           else if length coords > 100
-                then trace "length too long" Right coords
-                else doTheThing
-           --else doTheThing
--}
+      else if length checked > 1000
+           then trace "length checked too long: > 1000" $ Right checked
+           else doTheThing
 
 --helpers for findAllPaths'
 
@@ -240,9 +178,9 @@ addCoordToCoords coord@(x,y,z) coords =
                            Nothing
                            (zip coords [0..])
    in case checkedIndexMaybe of
-         Nothing -> coord : coords
+         Nothing -> coords ++ [coord]
          (Just (coord_@(_, _, z_), index)) ->
-            if z > z_
+            if z < z_
             then replaceLstIndex index coords coord
             else coords
 
@@ -256,7 +194,7 @@ isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
                if not acc
                then False
                else if coord3Eq coord coord_
-                     then z > z_
+                     then z < z_
                      else True)
          True
          checkedCoords
@@ -266,11 +204,8 @@ getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
    where helper [] acc = acc
          helper (x:xs) acc =
             if isGoodUncheckedCoord x checkedCoords
-            then trace "good" $ helper xs (x:acc)
-            else trace "not good" $ helper xs acc
-
-
-
+            then helper xs (x:acc)
+            else {-trace "not good" $-} helper xs acc
 
 haveFinishCoord finishCoord@(finishX, finishY) coords =
    foldr (\(x, y, _) acc
