@@ -94,7 +94,17 @@ myDelete3 coord coords = coords
 myDelete4 coord coords = L.delete coord coords
 
 myDelete :: (Eq a) => a -> [a] -> [a]
-myDelete = myDelete4
+myDelete = myDelete2
+
+deleteLstIndex i lst =
+   let splitted@(a,b) = splitAt i lst
+       (_:secondPartB) = b
+   in a ++ secondPartB
+
+replacaLstIndex i lst newItem =
+   let splitted@(a,b) = splitAt i lst
+       (_:secondPartB) = b
+   in a ++ (newItem:b)
 
 {-
 can do allEmptyChecked by length checkedTileCoords == length emptyTileCoords
@@ -125,6 +135,22 @@ findAllPaths :: TileMapData Char -> Either TileError [TileCoord3]
 findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
    where tEndPos = tileEndPos $ tileMapInfo tMapData
 
+
+findAllPaths' tData checked unchecked@(unX:unXs) =
+   let tMapInfo = tileMapInfo tData
+       tMatrix = tileMatrix tData
+       emptyCoords = emptyTiles tData
+       finishCoord@(finishX, finishY) = tileEndPos tMapInfo
+       startCoord@(startX, startY) = tileStartPos tMapInfo
+
+
+       doTheThing =
+         let nextCoord@(nextX, nextY, nextZ) = unX
+             addNextCoordToChecked nextCoord checked
+             adjacentCoords = findAdjacent tData nextCoord
+
+             findInChecked coord checked
+
 --TODO: TileMapData should take a
 findAllPaths' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
 findAllPaths' tData coords nextPosIndex currZ =
@@ -133,39 +159,38 @@ findAllPaths' tData coords nextPosIndex currZ =
        emptyCoords = emptyTiles tMapInfo
        finishCoord@(finishX, finishY) = tileEndPos tMapInfo
        startCoord@(startX, startY) = tileStartPos tMapInfo
-       allEmptyChecked = --length coords == length emptyCoords
-         let isTileCoordInChecked coord@(x, y) =
-               foldr (\(x_, y_, _) acc -> if acc then True else x_ == x && y_ == y)
-                     False
-                     coords --shouldnt this be take nextPosIndex coords (wait nvm)
-             leftOver = filter (not . isTileCoordInChecked) emptyCoords
-         in length leftOver == 0
-
-       haveFinishTileCoord cccoords =
-         foldr (\(x, y, _) acc
-                  -> if acc
-                     then True
-                     else (x == startX && y == startY))
-               False
-               cccoords
 
        doTheThing =
           let nextCoord@(nextX, nextY, nextZ) = (coords !! nextPosIndex)
               adjacentCoords = findAdjacent tData nextCoord
-              newCoords = trace ("adjacent:" ++ show adjacentCoords) $ coords ++ adjacentCoords
-              isGoodWeightZ coord@(_, _, z) =
+              newCoords = coords ++ adjacentCoords
+
+              isGoodWeightZ (coord@(_, _, z), index) =
+                {-TODO: this messes up nextPosIndex. also if we need to keep one, it deletes both
+                solutions:
+                1: calculate difference in length of newCoords and goodCoords and subtract
+                   that from nextPosIndex
+                2. (preferred) instead of deleting, we replace first coord with coord that has
+                   better index
+                -}
                 foldr (\coord_@(_, _, z_) acc
-                         -> if coord3Eq coord coord_ && z >= z_ then False else acc)
+                         -> if coord3Eq coord coord_ && z > z_ then False else acc)
+                         -- -> if coord3Eq coord coord_ && z >= z_ then False else acc)
+
                       --TODO: (L.delete coord coords)  and z >= z_ or coords and z > z_
                       True
-                      (myDelete coord coords)
+                      --(myDelete coord newCoords)
+                      (deleteLstIndex index newCoords)
 
-              goodCoords = filter isGoodWeightZ newCoords
+              --goodCoords = filter isGoodWeightZ newCoords
+              goodCoords' = filter isGoodWeightZ (zip newCoords [0..])
+              goodCoords = map fst goodCoords'
+
               --goodCoords = filter isGoodWeightZ adjacentCoords ++ coords
 
-          in if (trace (show goodCoords) False)  --(nextPosIndex+1 >= (length goodCoords))
+          in if (False)  --(nextPosIndex+1 >= (length goodCoords))
                 || ((length goodCoords == length coords
-                    && (not $ haveFinishTileCoord goodCoords)
+                    && (not $ haveFinishCoord startCoord goodCoords)
                     && nextZ > currZ))
              then Left $ ("No new coords found"
                          ++ ";\tlength coords: " ++ (show $ length coords)
@@ -181,18 +206,47 @@ findAllPaths' tData coords nextPosIndex currZ =
 
              else findAllPaths' tData goodCoords (nextPosIndex+1) nextZ
 
-   in if haveFinishTileCoord coords
+   in if haveFinishCoord startCoord coords
       then Right coords
-      else if allEmptyChecked
+      else if (allEmptyChecked coords emptyCoords)
            then Left $ "no path found"
                        ++ "; length coords: " ++ (show $ length coords)
                        ++ "; coords: " ++ (show coords)
 
-           else if length coords > 80
+           else if length coords > 100
                 then trace "length too long" Right coords
                 else doTheThing
            --else doTheThing
 
+--helpers for findAllPaths'
+
+addNextCoordToChecked :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
+addNextCoordToChecked coord coords =
+   let checkedIndexMaybe = foldr (\(coord_@(_, _, z_), index) acc
+                                    -> if isJust acc
+                                       then acc
+                                       else if coord3Eq coord coord_
+                                            then (Just (coord_, index))
+                                            else Nothing)
+                           Nothing
+                           (zip coords [0..])
+   if isInChecked
+
+haveFinishCoord finishCoord@(finishX, finishY) coords =
+   foldr (\(x, y, _) acc
+            -> if acc
+            then True
+            else (x == finishX && y == finishY))
+         False
+         coords
+
+allEmptyChecked coords emptyCoords = --length coords == length emptyCoords
+   let isCoordInChecked coord@(x,y) =
+         foldr (\(x_, y_, _) acc -> if acc then True else x_ == x && y_ == y)
+               False
+               coords
+       leftOver = filter (not . isCoordInChecked) emptyCoords
+   in length leftOver == 0
 
 
 
