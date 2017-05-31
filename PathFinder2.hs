@@ -132,14 +132,16 @@ findAdjacent tData adjacentTo@(x, y, z) =
 
 --TODO: TileMapData should take a
 findAllPaths :: TileMapData Char -> Either TileError [TileCoord3]
-findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
+findAllPaths tMapData = findAllPaths' tMapData [] [coord2To3 tEndPos] --0 1
    where tEndPos = tileEndPos $ tileMapInfo tMapData
 
 
-findAllPaths' tData checked unchecked@(unX:unXs) itersWithoutNew =
+findAllPaths' _ _ [] = Left "All checked, no good coords"
+
+findAllPaths' tData checked unchecked@(unX:unXs) =
    let tMapInfo = tileMapInfo tData
        tMatrix = tileMatrix tData
-       emptyCoords = emptyTiles tData
+       emptyCoords = emptyTiles tMapInfo
        finishCoord@(finishX, finishY) = tileEndPos tMapInfo
        startCoord@(startX, startY) = tileStartPos tMapInfo
 
@@ -151,22 +153,15 @@ findAllPaths' tData checked unchecked@(unX:unXs) itersWithoutNew =
              goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
              newUnchecked = addCoordsToCoords goodAdjacent unXs
 
-             newItersWithoutNew = if length newUnchecked == 0 && length newChecked == 0
-                                  then itersWithoutNew+1
-                                  else 0
-
-         in if (length newUnchecked == 0
-                && length newChecked == length emptyCoords
-                && itersWithoutNew > 20)
-            then Left "No Path Found"
-            else findAllPaths' tData newChecked newUnchecked
+         in findAllPaths' tData newChecked newUnchecked
    in if haveFinishCoord finishCoord checked
       then Right checked
-      else if
+      else doTheThing
 
+{-
 --TODO: TileMapData should take a
-findAllPaths' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
-findAllPaths' tData coords nextPosIndex currZ =
+findAllPaths2' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
+findAllPaths2' tData coords nextPosIndex currZ =
    let tMapInfo = tileMapInfo tData
        tMatrix = tileMatrix tData
        emptyCoords = emptyTiles tMapInfo
@@ -230,6 +225,7 @@ findAllPaths' tData coords nextPosIndex currZ =
                 then trace "length too long" Right coords
                 else doTheThing
            --else doTheThing
+-}
 
 --helpers for findAllPaths'
 
