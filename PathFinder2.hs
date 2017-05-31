@@ -17,9 +17,12 @@ import Utils
 import qualified Data.Matrix as M
 import qualified Data.List as L
 
+import Debug.Trace
+
 type TileError = String
 type TileMatrixPred a = (TileMatrix a -> TileCoord2 -> Bool)
 
+debug = True
 
 data TileMatrixFuncs a =
    TileMatrixFuncs { isTileEmpty :: TileMatrixPred a
@@ -54,6 +57,13 @@ tileMapInit :: TileMap a -> TileMatrix a -> TileMatrixFuncs a
             -> Either TileError (TileMapData a)
 
 tileMapInit tileMap tileMatrix tileFuncs =
+   if debug
+   then trace "initialized TileMapData"  --("tm data: " ++ (show tmData))
+              tmData
+   else tmData
+      where tmData = tileMapInit' tileMap tileMatrix tileFuncs
+
+tileMapInit' tileMap tileMatrix tileFuncs =
    do tileStartPos <- listSingletonExtract $ matrixFilter2 tileMatrix isStart
       tileEndPos <- listSingletonExtract $ matrixFilter2 tileMatrix isEnd
       emptyTiles <- listHasAtLeast1 $ matrixFilter2 tileMatrix isEmpty
@@ -119,7 +129,8 @@ findAllPaths' tData coords nextPosIndex currZ =
                        ++ "; length coords: " ++ (show $ length coords)
                        ++ "; coords: " ++ (show coords)
 
-           else doTheThing
+           else if length coords > 10 then Right coords else doTheThing
+           --else doTheThing
 
 
 getShortestPath :: [TileCoord3] -> Either TileError [TileCoord3]

@@ -11,9 +11,10 @@ module DrawerHelper
 --, CircuitLayout(CircuitLayout, getLayoutElements, getConnectedPointCoords, getConnectedPointNames)
 --, newCircuitLayout
 , cLayoutGetWireCoords --Old, removeme
-, cLayoutToGrid
+, cLayoutToGrid, cLayoutToGridWithWires
 , ShapeConnectionData(getShapeData) --testing
-, getConnectionPathCoords
+, getConnectionPathCoords, getConnectionCoords --testing
+, generatePathGrid
 ) where
 
 import Utils
@@ -26,6 +27,10 @@ import qualified PathFinder2 as PF2
 
 import Debug.Trace
 
+debug = True
+
+------ ### path finder stuff
+
 pathFullChar = 'x'
 pathEmptyChar = ' '
 pathStartChar = 's'
@@ -37,6 +42,10 @@ tileMatrixFuncs = PF2.TileMatrixFuncs
    , PF2.isTileEnd   = \m (x, y) -> M.getElem y x m == pathEndChar
    }
 
+------ ### end path finder stuff
+
+
+------ ### data structures
 
 {- battery:
 
@@ -72,6 +81,8 @@ data ShapeConnectionData a =
                        } deriving (Show)
 
 type CircuitLayout a = [ShapeConnectionData a] --TODO: dimensions should be stored here
+
+------ ### end data structures
 
 
 ------ ### Drawing circuits without connectors
@@ -131,6 +142,17 @@ cLayoutToGrid gridInfo cLayout =
 generateShapePathGrid :: Int -> Int -> Char -> DrawGrid
 generateShapePathGrid width height elem = DrawGridChar $ M.matrix height width (\(x, y) -> elem)
 
+newBorderGrid :: Int -> Int -> DrawGrid
+newBorderGrid gridWidth gridHeight =
+   let grid = newDrawGrid gridWidth gridHeight
+       m1 = getCharGrid grid
+       replaceWithFull = (\_ _ -> pathFullChar)
+       m2 = M.mapRow replaceWithFull 1 m1
+       m3 = M.mapRow replaceWithFull gridHeight m2
+       m4 = M.mapCol replaceWithFull 1 m3
+       m5 = M.mapCol replaceWithFull gridWidth m4
+   in DrawGridChar m5
+
 --generates 'x' filled grid without drawing actual Circuit Elemens
 --TODO: add 'x' border around the whole grid
 generatePathGrid :: DrawGridInfo -> CircuitLayout a -> DrawGrid
@@ -143,9 +165,10 @@ generatePathGrid gridInfo cLayout =
        (Right absoluteCoords) = getAbsoluteCoords cLayout
        (gridWidth, gridHeight) = getDrawGridDimensions gridInfo
        zipped = zip absoluteCoords shapes
+       goodDrawGrid = newBorderGrid gridWidth gridHeight
    in foldr (\ (shapeCoord, shapeGrid) acc ->
                   overwriteGrid acc shapeGrid shapeCoord)
-            (newDrawGrid gridWidth gridHeight)
+            goodDrawGrid
             zipped
 
 ------ ### end generating path finder grids
@@ -224,11 +247,17 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
 
 
 getAllPathSteps :: DrawGrid -> TileCoord2 -> TileCoord2 -> Either CircError [TileCoord2]
-getAllPathSteps grid startCoord endCoord =
-   let matrix1 = getCharGrid grid
-       matrix2 = M.setElem pathStartChar startCoord matrix1
-       matrix3 = M.setElem pathEndChar endCoord matrix2
-       tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+getAllPathSteps grid startCoord@(x1,y1) endCoord@(x2,y2) =
+   let startCoord' = (y1,x1)
+       endCoord' = (y2, x2)
+       matrix1 = getCharGrid grid
+       matrix2 = M.setElem pathStartChar startCoord' matrix1
+       matrix3 = M.setElem pathEndChar endCoord' matrix2
+       --tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+       tileMapData = trace (--"matrix2: \n" ++ (L.intercalate "\n" . M.toLists $ matrix2) ++
+                            "\tmatrix3: \n" ++ (L.intercalate "\n" . M.toLists $ matrix3))
+                           $ PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+       x = 0
        allPaths = tileMapData >>= PF2.findAllPaths
        shortestPath3 = allPaths >>= PF2.getShortestPath
        shortestPath2 = fmap (map (\(x,y,z) -> (x,y))) shortestPath3
@@ -239,16 +268,31 @@ getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [Tile
 getConnectionCoords gridInfo cLayout =
    let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
        (Right absoluteCoords) = getAbsoluteCoords cLayout
-       pathGrid = generatePathGrid gridInfo cLayout
-       terminalEndpoints = getConnectionPathCoords cLayout
-       --allPaths = terminalEndpoints >>= (map (\(start, end) -> getAllPathSteps pathGrid start end))
-       allPaths = fmap listEitherToEitherList $ fmap (map (\(start, end) -> getAllPathSteps pathGrid start end)) terminalEndpoints
-
-   in fmap (concat . concat) allPaths -- $ listEitherToEitherList allPaths
+       pathGrid = trace "hi1" $ generatePathGrid gridInfo cLayout
+       terminalEndpoints = trace "hi2" $ getConnectionPathCoords cLayout
+       allPaths = (map (\(start, end) -> trace "hi3" $ getAllPathSteps pathGrid start end)) <$> terminalEndpoints
+   in (concat . concat) <$> listEitherToEitherList <$> allPaths
 
 ------ ### end getting coordinates for path finder
 
 
+------ ### drawing wires
+
+gridReplacePixels :: DrawGrid -> [TileCoord2] -> Char -> Either CircError DrawGrid
+gridReplacePixels drawGrid pixs newElem =
+   let helper' m [] = (DrawGridChar m)
+       helper' m (pix@(x,y):pixs) = helper' newM pixs
+         where newM = M.setElem newElem (y,x) m
+   in Right $ helper' (getCharGrid drawGrid) pixs
+
+cLayoutToGridWithWires :: DrawGridInfo -> CircuitLayout a -> Either CircError DrawGrid
+cLayoutToGridWithWires dGrid cLayout =
+   do wireCoords <- getConnectionCoords dGrid cLayout
+      normalGrid <- cLayoutToGrid dGrid cLayout
+      newGrid <- gridReplacePixels normalGrid wireCoords '#'
+      return newGrid
+
+------ ### end drawing wires
 
 ------ ### generating layouts from Circuit
 
@@ -342,6 +386,8 @@ arrangeShapeData gridInfo shapes =
 ------ ### end generating layouts from Circuit
 
 
+
+
 --newShapeCoonnectiondata: takes circuitElement and
 --tuple with terminals and creates ShapeConnectionData
 newShapeConnectionData :: CircuitElement a -> ([String], [String]) -> Maybe TileCoord2
@@ -414,9 +460,8 @@ drawGridToShapeData shape =
              shape
 
 
------------------
+------ ### translate element to ASCII code
 
---translate element to ASCII code
 getElAscii :: Element a -> String --z and y means it's endpoint
 
 getElAscii (EnergySourceElement source) = "\
@@ -456,7 +501,7 @@ getElAscii (ResistorElement resistanceElem) = "\
 getElAscii (WireElement wireElem) = "+====-"
 
 
------------------
+------ ### end translate element to ASCII code
 
 --drawer for figuring out wire paths
 --elToPathGrid :: (Num a) => Element a -> DrawGrid

@@ -3,6 +3,9 @@ import DrawGrid
 import CmdDrawer
 import DrawerHelper
 
+import qualified Data.List as L
+import qualified Data.Matrix as M
+
 
 getTestCircuit1 :: (Num b, Num a) => Maybe (Circuit a b)
 getTestCircuit1 = do
@@ -69,19 +72,20 @@ test2 = do
 (Right testRet2) = test2
 result2 = do
    mapM_ putStrLn testRet2
+-------end test2
 
-
-----test 3 (testing circuitToLayout coords)
-
-gridPadding = (2,2) --(3,5)
-gridDimensions = (40, 25) --(40, 20)
+------- test 3 (testing circuitToLayout coords)
+gridPadding = (5,5) --(2,2) --(3,5)
+gridDimensions = (45,25) -- (40, 25) --(40, 20)
 gridInfo = DrawGridInfo gridDimensions gridPadding
 
-(Just circuitTest3) = getTestCircuit2
+(Just circuitTest3) = getTestCircuit1 --getTestCircuit2
 
 layout3 = circuitToLayout circuitTest3 gridInfo
-connectionCoords3 =  layout3 >>= getConnectionPathCoords
-grid3 = layout3 >>= cLayoutGetWireCoords gridInfo
+
+--grid3 = layout3 >>= cLayoutGetWireCoords gridInfo
+--grid3 = layout3 >>= cLayoutToGrid gridInfo
+grid3 = layout3 >>= cLayoutToGridWithWires gridInfo
 resultStr3 = drawGridToDisplayStr <$> grid3
 (Right resultStr3') = resultStr3
 resultIO3 = do
@@ -94,9 +98,20 @@ resultIO3 = do
 shapeData3 = map getShapeData layout3'
 shapeCoords3 = map (getShapeCoord . getShapeData) layout3'
 
+--((x,y), (x,y)) points to connect
+connectionCoords3 = layout3 >>= getConnectionPathCoords
+
+wireCoords3 = layout3 >>= getConnectionCoords gridInfo
+
 --map getShapeWidth shapeData3
 
 --getShapeData $ elToPathGrid $ element battery'
+
+--show $ fmap (Data.List.intercalate "\n" . M.toLists . getCharGrid .generatePathGrid gridInfo) layout3
+--putStr $ Data.List.intercalate "\n" . M.toLists . getCharGrid . generatePathGrid gridInfo $ layout3'
+
+------- end test 3
+
 
 
 -------Test

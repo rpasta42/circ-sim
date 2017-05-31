@@ -103,8 +103,36 @@ getTileMap6 = [
  -- 1234567890123456789012
    ]
 
+getTileMap7 = [
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x    xxxxxsxxxxx     xxxxxx     xxxxxo      x",
+   "x    xxxxxxxxxxx                            x",
+   "x    xxxxxxxxxxx                            x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x    xxxxx                                  x",
+   "x    xxxxx                                  x",
+   "x    xxxxx                                  x",
+   "x    xxxxx                                  x",
+   "x    xxxxx                                  x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "x                                           x",
+   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ]
 
-getTileMap = getTileMap2
+
+getTileMap = getTileMap7
 
 
 
@@ -116,7 +144,13 @@ tileMatrixFuncs = PF2.TileMatrixFuncs
       , PF2.isTileEnd   = \m (x,y) -> M.getElem y x m == 'o'
       }
 
-tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
+tileMatrixFuncs2 = PF2.TileMatrixFuncs
+   { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == ' '
+   , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
+   , PF2.isTileEnd = \m (x,y) -> M.getElem y x m == 'o'
+   }
+
+tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs2
 tileMapPaths = tileMapData >>= PF2.findAllPaths
 shortestPath = tileMapPaths >>= PF2.getShortestPath
 
