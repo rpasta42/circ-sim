@@ -133,10 +133,10 @@ findAdjacent tData adjacentTo@(x, y, z) =
 --TODO: TileMapData should take a
 findAllPaths :: TileMapData Char -> Either TileError [TileCoord3]
 findAllPaths tMapData = findAllPaths' tMapData [] [coord2To3 tEndPos] --0 1
-   where tEndPos = tileEndPos $ tileMapInfo tMapData
+   where tEndPos = tileStartPos $ tileMapInfo tMapData
 
 
-findAllPaths' _ _ [] = Left "All checked, no good coords"
+findAllPaths' _ checked [] = Left $ "All checked, no good coords" ++ show checked
 
 findAllPaths' tData checked unchecked@(unX:unXs) =
    let tMapInfo = tileMapInfo tData
@@ -153,8 +153,8 @@ findAllPaths' tData checked unchecked@(unX:unXs) =
              goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
              newUnchecked = addCoordsToCoords goodAdjacent unXs
 
-         in findAllPaths' tData newChecked newUnchecked
-   in if haveFinishCoord finishCoord checked
+         in trace ("kk" ++ (show newUnchecked)) $ findAllPaths' tData newChecked newUnchecked
+   in if trace "hi" $ haveFinishCoord finishCoord checked
       then Right checked
       else doTheThing
 
@@ -174,13 +174,13 @@ findAllPaths2' tData coords nextPosIndex currZ =
               newCoords = coords ++ adjacentCoords
 
               isGoodWeightZ (coord@(_, _, z), index) =
-                {-TODO: this messes up nextPosIndex. also if we need to keep one, it deletes both
+                -TODO: this messes up nextPosIndex. also if we need to keep one, it deletes both
                 solutions:
                 1: calculate difference in length of newCoords and goodCoords and subtract
                    that from nextPosIndex
                 2. (preferred) instead of deleting, we replace first coord with coord that has
                    better index
-                -}
+                -
                 foldr (\coord_@(_, _, z_) acc
                          -> if coord3Eq coord coord_ && z > z_ then False else acc)
                          -- -> if coord3Eq coord coord_ && z >= z_ then False else acc)
@@ -255,7 +255,9 @@ isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
    foldr (\ coord_@(_, _, z_) acc ->
                if not acc
                then False
-               else coord3Eq coord coord_ && z > z_)
+               else if coord3Eq coord coord_
+                     then z > z_
+                     else True)
          True
          checkedCoords
 
@@ -264,8 +266,8 @@ getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
    where helper [] acc = acc
          helper (x:xs) acc =
             if isGoodUncheckedCoord x checkedCoords
-            then helper xs (x:acc)
-            else helper xs acc
+            then trace "good" $ helper xs (x:acc)
+            else trace "not good" $ helper xs acc
 
 
 
