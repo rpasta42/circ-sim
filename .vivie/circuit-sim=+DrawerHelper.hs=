@@ -107,98 +107,126 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-2,17fold
-27,34fold
-36,39fold
-41,44fold
-48,49fold
-46,49fold
-51,58fold
-62,63fold
-66,83fold
-87,97fold
-100,111fold
-62,113fold
-117,118fold
-122,135fold
-115,137fold
-141,146fold
-150,155fold
-157,163fold
-165,169fold
-148,170fold
-179,209fold
-175,210fold
-227,241fold
-243,255fold
-258,263fold
-271,282fold
-284,310fold
-264,311fold
-224,313fold
-318,331fold
-333,347fold
-350,353fold
-356,359fold
-361,376fold
-355,377fold
-355,377fold
-379,385fold
-393,398fold
-400,403fold
-405,425fold
-391,428fold
-433,435fold
-439,450fold
-36
+2,18fold
+39,43fold
+32,45fold
+50,57fold
+59,62fold
+64,67fold
+71,72fold
+69,72fold
+74,81fold
+48,85fold
+91,108fold
+112,122fold
+125,136fold
+88,138fold
+142,143fold
+145,154fold
+158,172fold
+140,174fold
+178,183fold
+187,192fold
+194,200fold
+202,206fold
+185,207fold
+216,246fold
+212,247fold
+249,265fold
+271,279fold
+176,282fold
+287,292fold
+294,299fold
+285,301fold
+306,320fold
+322,334fold
+337,342fold
+350,361fold
+363,389fold
+343,390fold
+303,392fold
+399,412fold
+414,428fold
+431,434fold
+437,440fold
+442,457fold
+436,458fold
+436,458fold
+460,466fold
+473,478fold
+480,483fold
+485,505fold
+471,508fold
+469,510fold
+513,515fold
+519,530fold
+32
 normal! zo
-46
-normal! zo
+32
+normal! zc
 48
 normal! zo
-46
+69
+normal! zo
+71
+normal! zo
+69
 normal! zc
-62
-normal! zo
-62
-normal! zo
-62
+48
 normal! zc
-115
+88
 normal! zo
-117
-normal! zo
-115
+88
 normal! zc
-148
+140
 normal! zo
-148
+142
+normal! zo
+140
 normal! zc
-175
+176
 normal! zo
-175
+185
+normal! zo
+185
 normal! zc
-224
+212
 normal! zo
-264
-normal! zo
-264
+212
 normal! zc
-224
+176
 normal! zc
-355
+285
 normal! zo
-355
-normal! zo
-355
+285
 normal! zc
-391
+303
 normal! zo
-let s:l = 211 - ((176 * winheight(0) + 27) / 54)
+343
+normal! zo
+343
+normal! zc
+303
+normal! zc
+436
+normal! zo
+436
+normal! zo
+436
+normal! zc
+469
+normal! zo
+471
+normal! zo
+471
+normal! zc
+469
+normal! zc
+let s:l = 266 - ((240 * winheight(0) + 26) / 53)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-211
+266
 normal! 0
 let &so = s:so_save | let &siso = s:siso_save
 doautoall SessionLoadPost
