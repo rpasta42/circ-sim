@@ -1,5 +1,6 @@
 
 import qualified Data.Matrix as M
+import qualified Data.List as L
 --import qualified PathFinder as PF1
 import qualified PathFinder2 as PF2
 
@@ -53,7 +54,7 @@ getTileMap3 = [   --y
    ]
 ----0123456789 x
 
-getTileMap4 :: TileMap Char
+getTileMap4 :: TileMap Char --SHOULD FAIL
 getTileMap4 = [   --y
    "xxxxxxxxxx", --0
    "x...xx.x.x", --1
@@ -132,13 +133,10 @@ getTileMap7 = [
    ]
 
 
-getTileMap = getTileMap7
-
-
 
 -- #test code PF2
 
-tileMatrixFuncs = PF2.TileMatrixFuncs
+tileMatrixFuncs1 = PF2.TileMatrixFuncs
       { PF2.isTileEmpty = \m (x,y) -> M.getElem y x m == '.'
       , PF2.isTileStart = \m (x,y) -> M.getElem y x m == 's'
       , PF2.isTileEnd   = \m (x,y) -> M.getElem y x m == 'o'
@@ -150,7 +148,10 @@ tileMatrixFuncs2 = PF2.TileMatrixFuncs
    , PF2.isTileEnd = \m (x,y) -> M.getElem y x m == 'o'
    }
 
-tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs2
+tileMatrixFuncs = tileMatrixFuncs2
+getTileMap = getTileMap7
+
+tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
 tileMapPaths = tileMapData >>= PF2.findAllPaths
 shortestPath = tileMapPaths >>= PF2.getShortestPath
 
@@ -179,6 +180,14 @@ shortestPathMatrixPF2 = do
    PF2.displayPaths tMapData shortestPath'
 
 (Right shortestPathMatrixPF2') = shortestPathMatrixPF2
+
+x = do
+      putStr "\n\n"
+      putStr . L.intercalate "\n" . M.toLists $ shortestPathMatrixPF2'
+      putStr "\n\n"
+
+(Left shortestPathError') = shortestPathMatrixPF2
+y = do putStr shortestPathError'
 
 -- #test code PF1
 

@@ -74,9 +74,27 @@ tileMapInit' tileMap tileMatrix tileFuncs =
                isEnd   = isTileEnd tileFuncs
 
 
-findAllPaths :: TileMapData a -> Either TileError [TileCoord3]
-findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
-   where tEndPos = tileEndPos $ tileMapInfo tMapData
+
+--filterUnique = L.nub --L.reverse . L.nub . L.reverse
+
+myDelete1 coord coords =
+   let deleted = L.delete coord coords
+   in if length deleted == length coords
+      then deleted
+      else myDelete coord deleted
+
+myDelete2 coord coords = reverse $ helper [] coords
+   where helper acc [] = acc
+         helper acc (x:xs) =
+            let newAcc = if x == coord then acc else x:acc
+            in helper newAcc xs
+
+myDelete3 coord coords = coords
+
+myDelete4 coord coords = L.delete coord coords
+
+myDelete :: (Eq a) => a -> [a] -> [a]
+myDelete = myDelete4
 
 {-
 can do allEmptyChecked by length checkedTileCoords == length emptyTileCoords
@@ -84,42 +102,83 @@ problem: if there's no path, allEmptyChecked will return false
 -}
 
 
-findAllPaths' :: TileMapData a -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
+findAdjacent :: TileMapData a -> TileCoord3 -> [TileCoord3]
+findAdjacent tData adjacentTo@(x, y, z) =
+   let midLeft = (x-1, y,   z+1)
+       topMid  = (x,   y-1, z+1)
+       botMid  = (x,   y+1, z+1)
+       midRight= (x+1, y,   z+1)
+   in filter (not . isBad) [midLeft, topMid, botMid, midRight]
+       where tFuncs = tileMatrixFuncs tData
+             tMatrix = tileMatrix tData
+             isCoordEmpty = isTileEmpty tFuncs
+             isCoordStart = isTileStart tFuncs
+             isBad (x_, y_, _) =
+                     x_ < 1 || y_ < 1
+                  || x_ >= (M.ncols tMatrix) || y_ >= (M.nrows tMatrix)
+                  ||  (not $ isCoordEmpty tMatrix (x_, y_)
+                  || isCoordStart tMatrix (x_, y_)) --TODO: wait...wtf is this??
+
+
+--TODO: TileMapData should take a
+findAllPaths :: TileMapData Char -> Either TileError [TileCoord3]
+findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
+   where tEndPos = tileEndPos $ tileMapInfo tMapData
+
+--TODO: TileMapData should take a
+findAllPaths' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
 findAllPaths' tData coords nextPosIndex currZ =
    let tMapInfo = tileMapInfo tData
        tMatrix = tileMatrix tData
        emptyCoords = emptyTiles tMapInfo
        finishCoord@(finishX, finishY) = tileEndPos tMapInfo
        startCoord@(startX, startY) = tileStartPos tMapInfo
-       allEmptyChecked = length coords == length emptyCoords
+       allEmptyChecked = --length coords == length emptyCoords
+         let isTileCoordInChecked coord@(x, y) =
+               foldr (\(x_, y_, _) acc -> if acc then True else x_ == x && y_ == y)
+                     False
+                     coords --shouldnt this be take nextPosIndex coords (wait nvm)
+             leftOver = filter (not . isTileCoordInChecked) emptyCoords
+         in length leftOver == 0
 
-       haveFinishTileCoord = --curried
+       haveFinishTileCoord cccoords =
          foldr (\(x, y, _) acc
                   -> if acc
                      then True
                      else (x == startX && y == startY))
                False
+               cccoords
 
        doTheThing =
           let nextCoord@(nextX, nextY, nextZ) = (coords !! nextPosIndex)
               adjacentCoords = findAdjacent tData nextCoord
-              newCoords = coords ++ adjacentCoords
+              newCoords = trace ("adjacent:" ++ show adjacentCoords) $ coords ++ adjacentCoords
               isGoodWeightZ coord@(_, _, z) =
                 foldr (\coord_@(_, _, z_) acc
-                         -> if coord3Eq coord coord_ && z > z_ then False else acc)
-                      True --TODO: (L.delete coord coords)  and z >= z_ or
-                      coords --TODO: coords and z > z_
+                         -> if coord3Eq coord coord_ && z >= z_ then False else acc)
+                      --TODO: (L.delete coord coords)  and z >= z_ or coords and z > z_
+                      True
+                      (myDelete coord coords)
+
               goodCoords = filter isGoodWeightZ newCoords
-          in if length goodCoords == length coords
-                && (not $ haveFinishTileCoord goodCoords)
-                && nextZ > currZ
-             then Left $ "No new coords found"
-                         ++ "; length coords: " ++ (show $ length coords)
-                         ++ "; coords: " ++ (show coords)
-                         ++ "; length goodCoords: " ++ (show $ length goodCoords)
-                         ++ "; goodCoords: " ++ (show goodCoords)
-                         ++ "; old z: " ++ (show currZ)
-                         ++ "; next z: " ++ (show nextZ)
+              --goodCoords = filter isGoodWeightZ adjacentCoords ++ coords
+
+          in if (trace (show goodCoords) False)  --(nextPosIndex+1 >= (length goodCoords))
+                || ((length goodCoords == length coords
+                    && (not $ haveFinishTileCoord goodCoords)
+                    && nextZ > currZ))
+             then Left $ ("No new coords found"
+                         ++ ";\tlength coords: " ++ (show $ length coords)
+                         ++ ";\tlength goodCoords: " ++ (show $ length goodCoords)
+                         ++ ";\told z: " ++ (show currZ)
+                         ++ ";\tnext z: " ++ (show nextZ)
+                         ++ "\ncoords: " ++ (show coords)
+                         ++ "\ngoodCoords: " ++ (show goodCoords)
+                         ++ "\ndisplay coords: \n"
+                         ++ (let (Right x) = displayPaths tData coords in L.intercalate "\n" . M.toLists $ x)
+                         ++ "\ndisplay good coords: \n"
+                         ++ (let (Right x) = displayPaths tData goodCoords in L.intercalate "\n" . M.toLists $ x))
+
              else findAllPaths' tData goodCoords (nextPosIndex+1) nextZ
 
    in if haveFinishTileCoord coords
@@ -129,8 +188,12 @@ findAllPaths' tData coords nextPosIndex currZ =
                        ++ "; length coords: " ++ (show $ length coords)
                        ++ "; coords: " ++ (show coords)
 
-           else if length coords > 10 then Right coords else doTheThing
+           else if length coords > 80
+                then trace "length too long" Right coords
+                else doTheThing
            --else doTheThing
+
+
 
 
 getShortestPath :: [TileCoord3] -> Either TileError [TileCoord3]
@@ -156,7 +219,7 @@ getShortestPath pathStepList@(_:_) = helper' [] pathStepList
 
 
 
-kkDigit x = if x > 9 then '0' else intToDigit x
+kkDigit x = if x > 9 then kkDigit $ x-10 else intToDigit x
 
 displayPaths :: TileMapData Char
              -> [TileCoord3]
@@ -168,23 +231,6 @@ displayPaths tData goodPath =
       where helper' mMap [] = mMap
             helper' mMap ((y,x,z):xs) = helper' (M.setElem (kkDigit z) (x, y) mMap) xs
 
-
-
-findAdjacent :: TileMapData a -> TileCoord3 -> [TileCoord3]
-findAdjacent tData adjacentTo@(x, y, z) =
-   let midLeft = (x-1, y,   z+1)
-       topMid  = (x,   y-1, z+1)
-       botMid  = (x,   y+1, z+1)
-       midRight= (x+1, y,   z+1)
-   in filter (not . isBad) [midLeft, topMid, botMid, midRight]
-       where tFuncs = tileMatrixFuncs tData
-             tMatrix = tileMatrix tData
-             isCoordEmpty = isTileEmpty tFuncs
-             isCoordStart = isTileStart tFuncs
-             isBad (x_, y_, _) =
-                     x_ < 1 || y_ < 1
-                  || x_ > (M.ncols tMatrix - 1) || y_ > (M.nrows tMatrix - 1)
-                  ||  (not $ isCoordEmpty tMatrix (x_, y_) || isCoordStart tMatrix (x_, y_))
 
 
 --coord3Eq/coord2To3/maxCoordByZ
