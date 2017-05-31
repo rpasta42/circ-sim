@@ -101,7 +101,7 @@ deleteLstIndex i lst =
        (_:secondPartB) = b
    in a ++ secondPartB
 
-replacaLstIndex i lst newItem =
+replaceLstIndex i lst newItem =
    let splitted@(a,b) = splitAt i lst
        (_:secondPartB) = b
    in a ++ (newItem:b)
@@ -136,20 +136,33 @@ findAllPaths tMapData = findAllPaths' tMapData [coord2To3 tEndPos] 0 1
    where tEndPos = tileEndPos $ tileMapInfo tMapData
 
 
-findAllPaths' tData checked unchecked@(unX:unXs) =
+findAllPaths' tData checked unchecked@(unX:unXs) itersWithoutNew =
    let tMapInfo = tileMapInfo tData
        tMatrix = tileMatrix tData
        emptyCoords = emptyTiles tData
        finishCoord@(finishX, finishY) = tileEndPos tMapInfo
        startCoord@(startX, startY) = tileStartPos tMapInfo
 
-
        doTheThing =
          let nextCoord@(nextX, nextY, nextZ) = unX
-             addNextCoordToChecked nextCoord checked
-             adjacentCoords = findAdjacent tData nextCoord
+             newChecked = addCoordToCoords nextCoord checked
 
-             findInChecked coord checked
+             adjacentCoords = findAdjacent tData nextCoord
+             goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
+             newUnchecked = addCoordsToCoords goodAdjacent unXs
+
+             newItersWithoutNew = if length newUnchecked == 0 && length newChecked == 0
+                                  then itersWithoutNew+1
+                                  else 0
+
+         in if (length newUnchecked == 0
+                && length newChecked == length emptyCoords
+                && itersWithoutNew > 20)
+            then Left "No Path Found"
+            else findAllPaths' tData newChecked newUnchecked
+   in if haveFinishCoord finishCoord checked
+      then Right checked
+      else if
 
 --TODO: TileMapData should take a
 findAllPaths' :: TileMapData Char -> [TileCoord3] -> Int -> Int -> Either TileError [TileCoord3]
@@ -220,9 +233,9 @@ findAllPaths' tData coords nextPosIndex currZ =
 
 --helpers for findAllPaths'
 
-addNextCoordToChecked :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
-addNextCoordToChecked coord coords =
-   let checkedIndexMaybe = foldr (\(coord_@(_, _, z_), index) acc
+addCoordToCoords :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
+addCoordToCoords coord@(x,y,z) coords =
+   let checkedIndexMaybe = foldr (\(coord_, index) acc
                                     -> if isJust acc
                                        then acc
                                        else if coord3Eq coord coord_
@@ -230,7 +243,36 @@ addNextCoordToChecked coord coords =
                                             else Nothing)
                            Nothing
                            (zip coords [0..])
-   if isInChecked
+   in case checkedIndexMaybe of
+         Nothing -> coord : coords
+         (Just (coord_@(_, _, z_), index)) ->
+            if z > z_
+            then replaceLstIndex index coords coord
+            else coords
+
+addCoordsToCoords :: [TileCoord3] -> [TileCoord3] -> [TileCoord3]
+addCoordsToCoords [] coords = coords
+addCoordsToCoords (x:xs) coords = addCoordsToCoords xs (addCoordToCoords x coords)
+
+isGoodUncheckedCoord :: TileCoord3 -> [TileCoord3] -> Bool
+isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
+   foldr (\ coord_@(_, _, z_) acc ->
+               if not acc
+               then False
+               else coord3Eq coord coord_ && z > z_)
+         True
+         checkedCoords
+
+getGoodUncheckedCoords :: [TileCoord3] -> [TileCoord3] -> [TileCoord3]
+getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
+   where helper [] acc = acc
+         helper (x:xs) acc =
+            if isGoodUncheckedCoord x checkedCoords
+            then helper xs (x:acc)
+            else helper xs acc
+
+
+
 
 haveFinishCoord finishCoord@(finishX, finishY) coords =
    foldr (\(x, y, _) acc
