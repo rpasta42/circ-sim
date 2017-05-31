@@ -253,25 +253,31 @@ getAllPathSteps grid startCoord@(x1,y1) endCoord@(x2,y2) =
        matrix1 = getCharGrid grid
        matrix2 = M.setElem pathStartChar startCoord' matrix1
        matrix3 = M.setElem pathEndChar endCoord' matrix2
-       --tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
-       tileMapData = trace (--"matrix2: \n" ++ (L.intercalate "\n" . M.toLists $ matrix2) ++
+       matrix4 = M.transpose matrix3
+       tileMapData = PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
+       {-tileMapData = trace ("matrix2: \n" ++ (L.intercalate "\n" . M.toLists $ matrix2) ++
                             "\tmatrix3: \n" ++ (L.intercalate "\n" . M.toLists $ matrix3))
                            $ PF2.tileMapInitFromMatrix matrix3 tileMatrixFuncs
-       x = 0
+       -}
        allPaths = tileMapData >>= PF2.findAllPaths
        shortestPath3 = allPaths >>= PF2.getShortestPath
        shortestPath2 = fmap (map (\(x,y,z) -> (x,y))) shortestPath3
    in shortestPath2
+
+switchCoord2XY :: TileCoord2 -> TileCoord2
+switchCoord2XY (x,y) = (y,x)
 
 --returns pixel locations of connections to draw
 getConnectionCoords :: DrawGridInfo -> CircuitLayout a -> Either CircError [TileCoord2]
 getConnectionCoords gridInfo cLayout =
    let dimensions@(gWidth, gHeight) = getDrawGridDimensions gridInfo
        (Right absoluteCoords) = getAbsoluteCoords cLayout
-       pathGrid = trace "hi1" $ generatePathGrid gridInfo cLayout
-       terminalEndpoints = trace "hi2" $ getConnectionPathCoords cLayout
-       allPaths = (map (\(start, end) -> trace "hi3" $ getAllPathSteps pathGrid start end)) <$> terminalEndpoints
-   in (concat . concat) <$> listEitherToEitherList <$> allPaths
+       pathGrid = generatePathGrid gridInfo cLayout
+       terminalEndpoints = getConnectionPathCoords cLayout
+       allPaths = (map (\(start, end) -> getAllPathSteps pathGrid start end)) <$> terminalEndpoints
+   --in map switchCoord2XY <$> concat . concat <$> listEitherToEitherList <$> allPaths
+   in concat . concat <$> listEitherToEitherList <$> allPaths
+
 
 ------ ### end getting coordinates for path finder
 
@@ -289,7 +295,7 @@ cLayoutToGridWithWires :: DrawGridInfo -> CircuitLayout a -> Either CircError Dr
 cLayoutToGridWithWires dGrid cLayout =
    do wireCoords <- getConnectionCoords dGrid cLayout
       normalGrid <- cLayoutToGrid dGrid cLayout
-      newGrid <- gridReplacePixels normalGrid wireCoords '#'
+      newGrid <- gridReplacePixels normalGrid wireCoords '\''
       return newGrid
 
 ------ ### end drawing wires
