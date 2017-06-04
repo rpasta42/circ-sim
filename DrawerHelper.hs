@@ -29,7 +29,7 @@ import Debug.Trace
 
 debug = True
 
------- ### path finder stuff
+------ ### path finder setup stuff
 
 pathFullChar = 'x'
 pathEmptyChar = ' '
@@ -42,7 +42,7 @@ tileMatrixFuncs = PF2.TileMatrixFuncs
    , PF2.isTileEnd   = \m (x, y) -> M.getElem y x m == pathEndChar
    }
 
------- ### end path finder stuff
+------ ### end path finder setup stuff
 
 
 ------ ### data structures
