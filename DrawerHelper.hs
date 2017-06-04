@@ -71,12 +71,14 @@ getShapeHeight s =
    let (_, y1, _, y2) = getShapeCoord s
    in y2 - y1
 
+type ConnectedTerm = (String, Int)
+
 data ShapeConnectionData a =
    ShapeConnectionData { getShapeData :: ShapeData
                        , getCircuitElement :: CircuitElement a
                        , getShapeName :: String
-                       , getConnectedShapeNamesT1 :: [String]
-                       , getConnectedShapeNamesT2 :: [String]
+                       , getConnectedShapeNamesT1 :: [ConnectedTerm]
+                       , getConnectedShapeNamesT2 :: [ConnectedTerm]
                        , arrangedCoord :: Maybe TileCoord2
                        } deriving (Show)
 
@@ -221,8 +223,16 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
    let thisConns@(thisPosConns, thisNegConns) = getShapeDataConnectionCoords sConnData
        thisPosCon = head thisPosConns
        thisNegCon = head thisNegConns
-       negNames = getConnectedShapeNamesT1 sConnData
-       posNames = getConnectedShapeNamesT2 sConnData
+
+       negTerms = getConnectedShapeNamesT1 sConnData
+       posTerms = getConnectedShapeNamesT2 sConnData
+
+       negIndices = map snd negTerms
+       posIndices = map snd posTerms
+
+       negNames = map fst negTerms
+       posNames = map fst posTerms
+
        negConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) negNames
        posConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) posNames
        currAcc = do
@@ -231,8 +241,17 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
 
          --TODO: this is gonna be a bug because we don't account
          --for terminals of negConnDatas' and posConnDatas'
-         negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
-         posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
+
+         --negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
+         --posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
+
+         negConns <- return $ map (\(a, i) ->
+                                       ((fst $ getShapeDataConnectionCoords a) !! (negIndices !! i)))
+                                  (zip negConnDatas' [0..])
+         posConns <- return $ map (\(a, i) ->
+                                       ((fst $ getShapeDataConnectionCoords a) !! (posIndices !! i)))
+                                  (zip posConnDatas' [0..])
+
 
          negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
          posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
@@ -348,7 +367,7 @@ arrangeShapeData gridInfo shapes =
                  -> Either CircError [TileCoord2]
 
        helper' [] currX currY accCoords currRow rowMaxHeight =
-         let accCoordsFlat = (L.concat accCoords) ++ currRow
+         let accCoordsFlat = (L.concat accCoords) ++ (reverse currRow)
              maxX = coord2MaxX accCoordsFlat
              maxY = coord2MaxY accCoordsFlat
              errMsg = "circuit doesn't fit in given grid dimensions:  "
@@ -379,6 +398,7 @@ arrangeShapeData gridInfo shapes =
                          0
                          (currY + newCurrRowMaxHeight + paddingY)
                          ((reverse currRowCoords) : accCoords)
+                         --(currRowCoords : accCoords)
                          []
                          0
             else helper' xs
@@ -389,14 +409,10 @@ arrangeShapeData gridInfo shapes =
                          newCurrRowMaxHeight
    in helper' shapes 0 paddingY [] [] 0
 
------- ### end generating layouts from Circuit
-
-
-
 
 --newShapeCoonnectiondata: takes circuitElement and
 --tuple with terminals and creates ShapeConnectionData
-newShapeConnectionData :: CircuitElement a -> ([String], [String]) -> Maybe TileCoord2
+newShapeConnectionData :: CircuitElement a -> ([ConnectedTerm], [ConnectedTerm]) -> Maybe TileCoord2
                        -> ShapeConnectionData a
 newShapeConnectionData circEl (t1Connections, t2Connections) maybeArrangedCoord =
    let circElName = circuitElementName circEl
@@ -428,19 +444,23 @@ setShapeConnectionDataArrangedCoords (ShapeConnectionData { getShapeData = sData
                        }
 
 
+------ ### end generating layouts from Circuit
+
+
 {- getConnectedElements
 getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
 --basically goes through list and finds out which elements are connected
 -}
 
-getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
+
+getConnectedElements :: Circuit a b -> Map.Map String ([ConnectedTerm], [ConnectedTerm])
 getConnectedElements circ =
    let circElems = map fst $ elements circ
        connectedElems = getConnectedElems' circElems Map.empty
    in connectedElems
 
-getConnectedElems' :: [CircuitElement a] -> Map.Map String ([String], [String])
-                   -> Map.Map String ([String], [String])
+getConnectedElems' :: [CircuitElement a] -> Map.Map String ([ConnectedTerm], [ConnectedTerm])
+                   -> Map.Map String ([ConnectedTerm], [ConnectedTerm])
 getConnectedElems' [] acc = acc --TODO: replace with a fold
 getConnectedElems' circElems@(x:xs) nameMap =
    let elName = circuitElementName x
@@ -449,8 +469,8 @@ getConnectedElems' circElems@(x:xs) nameMap =
        --assumes we used connectElements, not connectElementsByName
        connectedToT1 = terminals t1
        connectedToT2 = terminals t2
-       connectedToT1Names = map circuitElementName connectedToT1
-       connectedToT2Names = map circuitElementName connectedToT2
+       connectedToT1Names = map (\(a, b) -> (circuitElementName a, b)) $ zip connectedToT1 [0..]
+       connectedToT2Names = map (\(a, b) -> (circuitElementName a, b)) $ zip connectedToT2 [0..]
        newMap = Map.insert elName
                            (connectedToT1Names, connectedToT2Names)
                            nameMap
@@ -479,7 +499,7 @@ getElAscii (EnergySourceElement source) = "\
 
 getElAscii (ResistorElement resistanceElem) = "\
    \/====+====\\\n\
-   \-=-/\\/\\/-=+\n\
+   \-==/\\/\\/==+\n\
    \\\====-====/"
 
 {-
