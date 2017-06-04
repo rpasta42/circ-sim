@@ -1,13 +1,15 @@
 
 import qualified Data.Matrix as M
 import qualified Data.List as L
+
+--import qualified System.CPUTime as CPUT
+
 --import qualified PathFinder as PF1
+import qualified PathFinder3 as PF3
 import qualified PathFinder2 as PF2
 
 import PathFinder
 import Utils
-
-
 
 getTileMap1 :: TileMap Char
 getTileMap1 = [   --y
@@ -148,8 +150,8 @@ tileMatrixFuncs2 = PF2.TileMatrixFuncs
    , PF2.isTileEnd = \m (x,y) -> M.getElem y x m == 'o'
    }
 
-tileMatrixFuncs = tileMatrixFuncs2
-getTileMap = getTileMap7
+tileMatrixFuncs = tileMatrixFuncs2 --2
+getTileMap = getTileMap7 --7
 
 tileMapData = PF2.tileMapInitFromMap getTileMap tileMatrixFuncs
 tileMapPaths = tileMapData >>= PF2.findAllPaths
@@ -181,10 +183,21 @@ shortestPathMatrixPF2 = do
 
 (Right shortestPathMatrixPF2') = shortestPathMatrixPF2
 
+picoToMilli n = n / 1000 / 1000
+picoToSeconds n = picoToMilli n / 1000
+
+--use :set +s instead
+--PF2: 1,203,333 1,266,666
+--PF3: 1,513,332 1,233,333
+
 x = do
+      --t1 <- CPUT.getCPUTime
       putStr "\n\n"
       putStr . L.intercalate "\n" . M.toLists $ shortestPathMatrixPF2'
       putStr "\n\n"
+      t2 <- CPUT.getCPUTime
+      --milliseconds
+      --putStrLn . show . round . picoToMilli $ fromIntegral (t2 - t1)
 
 (Left shortestPathError') = shortestPathMatrixPF2
 y = do putStr shortestPathError'

@@ -1,4 +1,4 @@
-module PathFinder2
+module PathFinder3
 ( findAllPaths
 , getShortestPath
 , findAdjacent --debug
@@ -76,48 +76,14 @@ tileMapInit' tileMap tileMatrix tileFuncs =
                isEnd   = isTileEnd tileFuncs
 
 
---filterUnique = L.nub --L.reverse . L.nub . L.reverse
 
---delete/replace/etc
-
-myDelete1 coord coords =
-   let deleted = L.delete coord coords
-   in if length deleted == length coords
-      then deleted
-      else myDelete coord deleted
-
-myDelete2 coord coords = reverse $ helper [] coords
-   where helper acc [] = acc
-         helper acc (x:xs) =
-            let newAcc = if x == coord then acc else x:acc
-            in helper newAcc xs
-
-myDelete3 coord coords = coords
-
-myDelete4 coord coords = L.delete coord coords
-
-myDelete :: (Eq a) => a -> [a] -> [a]
-myDelete = myDelete2
-
-
-deleteLstIndex i lst =
-   let splitted@(a,b) = splitAt i lst
-       (_:secondPartB) = b
-   in a ++ secondPartB
-
-replaceLstIndex i lst newItem =
-   let splitted@(a,b) = splitAt i lst
-       (_:secondPartB) = b
-   in a ++ (newItem:b)
-
-
-findAdjacent :: TileMapData a -> TileCoord3 -> [TileCoord3]
+findAdjacent :: TileMapData a -> TileCoord3 -> S.Seq TileCoord3
 findAdjacent tData adjacentTo@(x, y, z) =
    let midLeft = (x-1, y,   z+1)
        topMid  = (x,   y-1, z+1)
        botMid  = (x,   y+1, z+1)
        midRight= (x+1, y,   z+1)
-   in filter (not . isBad) [midLeft, topMid, botMid, midRight]
+   in S.fromList $ filter (not . isBad) [midLeft, topMid, botMid, midRight]
        where tFuncs = tileMatrixFuncs tData
              tMatrix = tileMatrix tData
              isCoordEmpty = isTileEmpty tFuncs
@@ -129,43 +95,44 @@ findAdjacent tData adjacentTo@(x, y, z) =
                   -- || isCoordStart tMatrix (x_, y_)) --TODO: wait...wtf is this??
 
 
-
 --TODO: TileMapData should take a
 findAllPaths :: TileMapData Char -> Either TileError [TileCoord3]
-findAllPaths tMapData = findAllPaths' tMapData [] [coord2To3 tEndPos] --0 1
+findAllPaths tMapData = fmap F.toList
+                             $ findAllPaths' tMapData S.empty (S.singleton $ coord2To3 tEndPos) --0 1
    where tEndPos = tileStartPos $ tileMapInfo tMapData
 
+findAllPaths' tData checked unchecked
+   | S.null unchecked = Left $ "All checked, no good coords" ++ show checked
 
+   | otherwise =
+      let unX = S.index unchecked 0
+          unXs = S.drop 1 unchecked
+          tMapInfo = tileMapInfo tData
+          tMatrix = tileMatrix tData
+          emptyCoords = emptyTiles tMapInfo
+          finishCoord@(finishX, finishY) = tileEndPos tMapInfo
+          startCoord@(startX, startY) = tileStartPos tMapInfo
 
-findAllPaths' _ checked [] = Left $ "All checked, no good coords" ++ show checked
+          doTheThing =
+            let nextCoord@(nextX, nextY, nextZ) = unX
+                newChecked = addCoordToCoords nextCoord checked
 
-findAllPaths' tData checked unchecked@(unX:unXs) =
-   let tMapInfo = tileMapInfo tData
-       tMatrix = tileMatrix tData
-       emptyCoords = emptyTiles tMapInfo
-       finishCoord@(finishX, finishY) = tileEndPos tMapInfo
-       startCoord@(startX, startY) = tileStartPos tMapInfo
+                adjacentCoords = findAdjacent tData nextCoord
+                goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
+                newUnchecked = addCoordsToCoords goodAdjacent unXs
 
-       doTheThing =
-         let nextCoord@(nextX, nextY, nextZ) = unX
-             newChecked = addCoordToCoords nextCoord checked
-
-             adjacentCoords = findAdjacent tData nextCoord
-             goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
-             newUnchecked = addCoordsToCoords goodAdjacent unXs
-
-         in {- trace ("\n\nkk unchecked:" ++ (show newUnchecked) ++ "\nnew checked" ++ (show newChecked)) -}
-                  findAllPaths' tData newChecked newUnchecked
-   in if {-trace "hi" $ EndComment-} haveFinishCoord finishCoord checked
-      then Right checked
-      else if length checked > 1000
-           then trace "length checked too long: > 1000" $ Right checked
-           else doTheThing
+            in {-trace ("\n\nkk unchecked:" ++ (show newUnchecked) ++ "\nnew checked" ++ (show newChecked))-}
+                     findAllPaths' tData newChecked newUnchecked
+      in if {-trace "hi" $-} haveFinishCoord finishCoord checked
+         then Right checked
+         else if length checked > 1000
+              then trace "length checked too long: > 1000" $ Right checked
+              else doTheThing
 
 
 --helpers for findAllPaths'
 
-addCoordToCoords :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
+addCoordToCoords :: TileCoord3 -> S.Seq TileCoord3 -> S.Seq TileCoord3
 addCoordToCoords coord@(x,y,z) coords =
    let checkedIndexMaybe = foldr (\(coord_, index) acc
                                     -> if isJust acc
@@ -174,42 +141,48 @@ addCoordToCoords coord@(x,y,z) coords =
                                             then (Just (coord_, index))
                                             else Nothing)
                            Nothing
-                           (zip coords [0..])
+                           (S.zip coords $ S.fromList [0..length coords+1])
    in case checkedIndexMaybe of
-         Nothing -> coords ++ [coord]
+         Nothing -> coords S.|> coord --coords S.>< S.singleton coord
          (Just (coord_@(_, _, z_), index)) ->
             if z < z_
-            then replaceLstIndex index coords coord
+            then S.update index coord coords
             else coords
 
-addCoordsToCoords :: [TileCoord3] -> [TileCoord3] -> [TileCoord3]
-addCoordsToCoords [] coords = coords
-addCoordsToCoords (x:xs) coords = addCoordsToCoords xs (addCoordToCoords x coords)
+addCoordsToCoords lst coords
+   | S.null lst = coords
+   | otherwise =
+      let x = S.index lst 0
+          xs = S.drop 1 lst
+      in addCoordsToCoords xs (addCoordToCoords x coords)
 
-isGoodUncheckedCoord :: TileCoord3 -> [TileCoord3] -> Bool
+isGoodUncheckedCoord :: TileCoord3 -> S.Seq TileCoord3 -> Bool
 isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
    foldr (\ coord_@(_, _, z_) acc ->
-               if not acc
-               then False
-               else if coord3Eq coord coord_
-                     then z < z_
-                     else True)
+            if not acc
+            then False
+            else if coord3Eq coord coord_
+                 then z < z_
+                 else True)
          True
          checkedCoords
 
-getGoodUncheckedCoords :: [TileCoord3] -> [TileCoord3] -> [TileCoord3]
-getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
-   where helper [] acc = acc
-         helper (x:xs) acc =
-            if isGoodUncheckedCoord x checkedCoords
-            then helper xs (x:acc)
-            else {- trace "not good" $ -} helper xs acc
+getGoodUncheckedCoords :: S.Seq TileCoord3 -> S.Seq TileCoord3 -> S.Seq TileCoord3
+getGoodUncheckedCoords newCoords checkedCoords = helper newCoords S.empty
+   where helper lst acc
+            | S.null lst = acc
+            | otherwise =
+               let x = S.index lst 0
+                   xs = S.drop 1 lst
+               in if isGoodUncheckedCoord x checkedCoords
+                  then helper xs (x S.<| acc)
+                  else {-trace "not good" $-} helper xs acc
 
 haveFinishCoord finishCoord@(finishX, finishY) coords =
    foldr (\(x, y, _) acc
             -> if acc
-            then True
-            else (x == finishX && y == finishY))
+               then True
+               else (x == finishX && y == finishY))
          False
          coords
 
@@ -218,8 +191,9 @@ allEmptyChecked coords emptyCoords = --length coords == length emptyCoords
          foldr (\(x_, y_, _) acc -> if acc then True else x_ == x && y_ == y)
                False
                coords
-       leftOver = filter (not . isCoordInChecked) emptyCoords
-   in length leftOver == 0
+       leftOver = S.filter (not . isCoordInChecked) emptyCoords
+   in S.length leftOver == 0
+
 
 
 
