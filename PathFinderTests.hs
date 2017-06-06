@@ -195,12 +195,18 @@ x = do
       putStr "\n\n"
       putStr . L.intercalate "\n" . M.toLists $ shortestPathMatrixPF2'
       putStr "\n\n"
-      t2 <- CPUT.getCPUTime
+      --t2 <- CPUT.getCPUTime
+
       --milliseconds
       --putStrLn . show . round . picoToMilli $ fromIntegral (t2 - t1)
 
 (Left shortestPathError') = shortestPathMatrixPF2
 y = do putStr shortestPathError'
+
+--with foldr:
+--fmap head tileMapPaths --1.31 secs
+
+
 
 -- #test code PF1
 

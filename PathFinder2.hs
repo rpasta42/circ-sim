@@ -136,7 +136,6 @@ findAllPaths tMapData = findAllPaths' tMapData [] [coord2To3 tEndPos] --0 1
    where tEndPos = tileStartPos $ tileMapInfo tMapData
 
 
-
 findAllPaths' _ checked [] = Left $ "All checked, no good coords" ++ show checked
 
 findAllPaths' tData checked unchecked@(unX:unXs) =
@@ -167,12 +166,12 @@ findAllPaths' tData checked unchecked@(unX:unXs) =
 
 addCoordToCoords :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
 addCoordToCoords coord@(x,y,z) coords =
-   let checkedIndexMaybe = foldr (\(coord_, index) acc
-                                    -> if isJust acc
-                                       then acc
-                                       else if coord3Eq coord coord_
-                                            then (Just (coord_, index))
-                                            else Nothing)
+   let checkedIndexMaybe = L.foldl' (\acc (coord_, index)
+                                       -> if isJust acc
+                                          then acc
+                                          else if coord3Eq coord coord_
+                                               then (Just (coord_, index))
+                                               else Nothing)
                            Nothing
                            (zip coords [0..])
    in case checkedIndexMaybe of
@@ -188,14 +187,14 @@ addCoordsToCoords (x:xs) coords = addCoordsToCoords xs (addCoordToCoords x coord
 
 isGoodUncheckedCoord :: TileCoord3 -> [TileCoord3] -> Bool
 isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
-   foldr (\ coord_@(_, _, z_) acc ->
+   L.foldl' (\ acc coord_@(_, _, z_) ->
                if not acc
                then False
                else if coord3Eq coord coord_
                      then z < z_
                      else True)
-         True
-         checkedCoords
+            True
+            checkedCoords
 
 getGoodUncheckedCoords :: [TileCoord3] -> [TileCoord3] -> [TileCoord3]
 getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
@@ -206,18 +205,18 @@ getGoodUncheckedCoords newCoords checkedCoords = helper newCoords []
             else {- trace "not good" $ -} helper xs acc
 
 haveFinishCoord finishCoord@(finishX, finishY) coords =
-   foldr (\(x, y, _) acc
-            -> if acc
-            then True
-            else (x == finishX && y == finishY))
-         False
-         coords
+   L.foldl (\acc (x, y, _)
+               -> if acc
+                  then True
+                  else (x == finishX && y == finishY))
+           False
+           coords
 
 allEmptyChecked coords emptyCoords = --length coords == length emptyCoords
    let isCoordInChecked coord@(x,y) =
-         foldr (\(x_, y_, _) acc -> if acc then True else x_ == x && y_ == y)
-               False
-               coords
+         L.foldl' (\acc (x_, y_, _) -> if acc then True else x_ == x && y_ == y)
+                  False
+                  coords
        leftOver = filter (not . isCoordInChecked) emptyCoords
    in length leftOver == 0
 
