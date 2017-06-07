@@ -18,9 +18,9 @@ import qualified Data.Matrix as M
 import qualified Data.List as L
 import qualified Data.Sequence as S
 import qualified Data.Foldable as F
+--import qualified GHC.Exts as E
 
 import Debug.Trace
-
 type TileError = String
 type TileMatrixPred a = (TileMatrix a -> TileCoord2 -> Bool)
 
@@ -140,7 +140,7 @@ findAllPaths' _ checked [] = Left $ "All checked, no good coords" ++ show checke
 
 findAllPaths' tData checked unchecked@(unX:unXs) =
    let tMapInfo = tileMapInfo tData
-       tMatrix = tileMatrix tData
+       --tMatrix = tileMatrix tData
        emptyCoords = emptyTiles tMapInfo
        finishCoord@(finishX, finishY) = tileEndPos tMapInfo
        startCoord@(startX, startY) = tileStartPos tMapInfo
@@ -151,18 +151,43 @@ findAllPaths' tData checked unchecked@(unX:unXs) =
 
              adjacentCoords = findAdjacent tData nextCoord
              goodAdjacent = getGoodUncheckedCoords adjacentCoords newChecked
-             newUnchecked = addCoordsToCoords goodAdjacent unXs
+             newUnchecked' = addCoordsToCoords goodAdjacent unXs
+             newUnchecked = sortUncheckedCoords newUnchecked' finishCoord
 
          in {- trace ("\n\nkk unchecked:" ++ (show newUnchecked) ++ "\nnew checked" ++ (show newChecked)) -}
                   findAllPaths' tData newChecked newUnchecked
    in if {-trace "hi" $ EndComment-} haveFinishCoord finishCoord checked
       then Right checked
-      else if length checked > 1000
-           then trace "length checked too long: > 1000" $ Right checked
-           else doTheThing
+      else doTheThing
+           --if length checked > 1000
+           --then trace "length checked too long: > 1000" $ Right checked
+           --else doTheThing
 
 
 --helpers for findAllPaths'
+
+pow :: (Integral a, Floating a) => a -> a -> a
+pow x 0 = x
+pow x p
+   | p `rem` 2 == 0 = pow (x*x) (p / 2)
+   | otherwise = x * pow x (p-1)
+
+pointDistance :: (Floating a) => TileCoord2 -> TileCoord2 -> a
+pointDistance (x1, y1) (x2, y2) = sqrt $ fromIntegral s1 + s2
+   where s1 = ((fromIntegral x2 - fromIntegral x1) ^ 2)
+         s2 = ((fromIntegral y2 - fromIntegral y1) ^ 2)
+
+sortUncheckedCoords :: [TileCoord3] -> TileCoord2 -> [TileCoord3]
+--sortUncheckedCoords newUnchecked' tEndPos = newUnchecked'
+sortUncheckedCoords unchecked tEndPos@(x,y) = L.sortBy sortFunc unchecked
+   where sortFunc :: TileCoord3 -> TileCoord3 -> Ordering
+         sortFunc a@(x1, y1, _) b@(x2, y2, _) =
+            let distance1 = pointDistance (x1, y1) tEndPos
+                distance2 = pointDistance (x2, y2) tEndPos
+            in compare distance1 distance2
+
+
+
 
 addCoordToCoords :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
 addCoordToCoords coord@(x,y,z) coords =
@@ -172,8 +197,8 @@ addCoordToCoords coord@(x,y,z) coords =
                                           else if coord3Eq coord coord_
                                                then (Just (coord_, index))
                                                else Nothing)
-                           Nothing
-                           (zip coords [0..])
+                                    Nothing
+                                    (zip coords [0..])
    in case checkedIndexMaybe of
          Nothing -> coords ++ [coord]
          (Just (coord_@(_, _, z_), index)) ->
@@ -187,7 +212,7 @@ addCoordsToCoords (x:xs) coords = addCoordsToCoords xs (addCoordToCoords x coord
 
 isGoodUncheckedCoord :: TileCoord3 -> [TileCoord3] -> Bool
 isGoodUncheckedCoord coord@(x,y,z) checkedCoords =
-   L.foldl' (\ acc coord_@(_, _, z_) ->
+   L.foldl (\ acc coord_@(_, _, z_) ->
                if not acc
                then False
                else if coord3Eq coord coord_
@@ -212,13 +237,13 @@ haveFinishCoord finishCoord@(finishX, finishY) coords =
            False
            coords
 
-allEmptyChecked coords emptyCoords = --length coords == length emptyCoords
-   let isCoordInChecked coord@(x,y) =
+allEmptyChecked coords emptyCoords = length coords == length emptyCoords
+   {-let isCoordInChecked coord@(x,y) =
          L.foldl' (\acc (x_, y_, _) -> if acc then True else x_ == x && y_ == y)
                   False
                   coords
        leftOver = filter (not . isCoordInChecked) emptyCoords
-   in length leftOver == 0
+   in length leftOver == 0-}
 
 
 

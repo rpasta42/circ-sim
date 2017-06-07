@@ -206,6 +206,8 @@ y = do putStr shortestPathError'
 --with foldr:
 --fmap head tileMapPaths --1.31 secs
 
+--with foldl:
+--fmap head tileMapPaths --1.43 secs
 
 
 -- #test code PF1
