@@ -220,7 +220,9 @@ getConnPathCoords' :: CircuitLayout a -> CircuitLayout a
                    -> Either CircError [(TileCoord2, TileCoord2)]
 getConnPathCoords' [] _ acc = acc
 getConnPathCoords' (sConnData:xs) originalCircuit acc =
-   let thisConns@(thisPosConns, thisNegConns) = getShapeDataConnectionCoords sConnData
+   let thisConns@(thisPosConns, thisNegConns) =
+         {-trace ("kk: " ++ show thisPosConns ++ " " ++ show thisNegConns)
+               $-} getShapeDataConnectionCoords sConnData
        thisPosCon = head thisPosConns
        thisNegCon = head thisNegConns
 
@@ -242,16 +244,17 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
          --TODO: this is gonna be a bug because we don't account
          --for terminals of negConnDatas' and posConnDatas'
 
-         --negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
-         --posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
+         negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
+         posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
 
+         {-
          negConns <- return $ map (\(a, i) ->
                                        ((fst $ getShapeDataConnectionCoords a) !! (negIndices !! i)))
                                   (zip negConnDatas' [0..])
          posConns <- return $ map (\(a, i) ->
                                        ((fst $ getShapeDataConnectionCoords a) !! (posIndices !! i)))
                                   (zip posConnDatas' [0..])
-
+         -}
 
          negConnCoords <- return $ map (\x -> (thisNegCon, x)) negConns
          posConnCoords <- return $ map (\x -> (thisPosCon, x)) posConns
@@ -299,7 +302,6 @@ getConnectionCoords gridInfo cLayout =
 
 
 ------ ### end getting coordinates for path finder
-
 
 ------ ### drawing wires
 
@@ -491,6 +493,19 @@ drawGridToShapeData shape =
 getElAscii :: Element a -> String --z and y means it's endpoint
 
 getElAscii (EnergySourceElement source) = "\
+   \/===\\\n\
+   \|===|\n\
+   \+=b=-\n\
+   \|===|\n\
+   \\\===/"
+
+getElAscii (ResistorElement resistanceElem) = "\
+   \/=========\\\n\
+   \-==/\\/\\/==+\n\
+   \\\=========/"
+
+{-
+getElAscii (EnergySourceElement source) = "\
    \/=+=\\\n\
    \|===|\n\
    \+=b=-\n\
@@ -501,6 +516,7 @@ getElAscii (ResistorElement resistanceElem) = "\
    \/====+====\\\n\
    \-==/\\/\\/==+\n\
    \\\====-====/"
+-}
 
 {-
    \+===+\n\ --default

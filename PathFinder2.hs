@@ -158,13 +158,15 @@ findAllPaths' tData checked unchecked@(unX:unXs) =
                   findAllPaths' tData newChecked newUnchecked
    in if {-trace "hi" $ EndComment-} haveFinishCoord finishCoord checked
       then Right checked
-      else doTheThing
-           --if length checked > 1000
-           --then trace "length checked too long: > 1000" $ Right checked
-           --else doTheThing
+      else --doTheThing
+           if length checked > 1000
+           then trace "length checked too long: > 1000" $ Right checked
+           else doTheThing
 
 
 --helpers for findAllPaths'
+
+--sortUncheckedCoords & helpers
 
 pow :: (Integral a, Floating a) => a -> a -> a
 pow x 0 = x
@@ -185,8 +187,6 @@ sortUncheckedCoords unchecked tEndPos@(x,y) = L.sortBy sortFunc unchecked
             let distance1 = pointDistance (x1, y1) tEndPos
                 distance2 = pointDistance (x2, y2) tEndPos
             in compare distance1 distance2
-
-
 
 
 addCoordToCoords :: TileCoord3 -> [TileCoord3] -> [TileCoord3]
@@ -248,7 +248,7 @@ allEmptyChecked coords emptyCoords = length coords == length emptyCoords
 
 
 getShortestPath :: [TileCoord3] -> Either TileError [TileCoord3]
-getShortestPath pathStepList@(_:_) = helper' [] pathStepList
+getShortestPath pathStepList@(_:_) = (reverse . tail . reverse) <$> helper' [] pathStepList
    where helper' [] [] = Left "getShortestPath error"
          helper' [] pathStepList =
             let maxCoord@(_, _, maxCoordZ) = maxCoordByZ pathStepList
