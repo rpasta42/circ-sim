@@ -7,8 +7,8 @@ import qualified Data.List as L
 import qualified Data.Matrix as M
 
 
-getTestCircuit1' :: (Num b, Num a) => Maybe (Circuit a b)
-getTestCircuit1' = do
+getTestCircuit1 :: (Num b, Num a) => Maybe (Circuit a b)
+getTestCircuit1 = do
       circuit <- Just newCircuit
       battery <- Just $ newVoltageSource "battery" 10
       positiveWire <- Just $ newWire "wire+"
@@ -29,14 +29,14 @@ getTestCircuit1' = do
 
       return circuit
 
-getTestCircuit1 :: (Num b, Num a) => Maybe (Circuit a b)
-getTestCircuit1 = do
+getTestCircuit1' :: (Num b, Num a) => Maybe (Circuit a b)
+getTestCircuit1' = do
    circuit <- Just newCircuit
    battery <- Just $ newVoltageSource "battery" 10
    resistor <- Just $ newResistor "resistor" 2
 
    (resistor, battery) <- Just $ connectElements battery resistor 1 2
-   (resistor, battery) <- Just $ connectElements resistor battery 1 2
+   (resistor, battery) <- Just $ connectElements battery resistor 2 1
 
    cElems1 <- return [resistor, battery]
    cElems2 <- return [battery, resistor]

@@ -149,7 +149,7 @@ newBorderGrid gridWidth gridHeight =
    let grid = newDrawGrid gridWidth gridHeight
        m1 = getCharGrid grid
        replaceWithFull = (\_ _ -> pathFullChar)
-       m2 = M.mapRow replaceWithFull 1 m1
+       m2 = M.mapRow replaceWithFull 1 m1 --drawing border for pathfinder
        m3 = M.mapRow replaceWithFull gridHeight m2
        m4 = M.mapCol replaceWithFull 1 m3
        m5 = M.mapCol replaceWithFull gridWidth m4
@@ -160,7 +160,7 @@ newBorderGrid gridWidth gridHeight =
 generatePathGrid :: DrawGridInfo -> CircuitLayout a -> DrawGrid
 generatePathGrid gridInfo cLayout =
    let shapes = map (\ shapeConnData ->
-                        let shapeSize@(x1, y1, x2, y2) = getShapeCoord . getShapeData  $ shapeConnData
+                        let shapeSize@(x1, y1, x2, y2) = getShapeCoord . getShapeData $ shapeConnData
                             shapeGrid = generateShapePathGrid x2 y2 pathFullChar
                         in shapeGrid)
                     cLayout
@@ -177,6 +177,7 @@ generatePathGrid gridInfo cLayout =
 
 ------ ### getting coordinates for path finder
 
+--return ShapeConnectionData from a name
 findConnDataByName :: CircuitLayout a -> String -> Either CircError (ShapeConnectionData a)
 findConnDataByName [] name = Left $ "findConnDataByName: couldn't find by name: " ++ name
 findConnDataByName (x:xs) name =
@@ -220,23 +221,27 @@ getConnPathCoords' :: CircuitLayout a -> CircuitLayout a
                    -> Either CircError [(TileCoord2, TileCoord2)]
 getConnPathCoords' [] _ acc = acc
 getConnPathCoords' (sConnData:xs) originalCircuit acc =
-   let thisConns@(thisPosConns, thisNegConns) =
-         {-trace ("kk: " ++ show thisPosConns ++ " " ++ show thisNegConns)
-               $-} getShapeDataConnectionCoords sConnData
-       thisPosCon = head thisPosConns
-       thisNegCon = head thisNegConns
+   let thisConns@(thisPosConns, thisNegConns) = getShapeDataConnectionCoords sConnData
+       thisPosCon = head thisPosConns --first positive connection
+       thisNegCon = head thisNegConns --first negative connection
 
-       negTerms = getConnectedShapeNamesT1 sConnData
-       posTerms = getConnectedShapeNamesT2 sConnData
+       negTerms = getConnectedShapeNamesT1 sConnData --neg connected (terminal 1)
+       posTerms = getConnectedShapeNamesT2 sConnData --pos connected (terminal 2)
 
-       negIndices = map snd negTerms
-       posIndices = map snd posTerms
+       --negIndices = map snd negTerms
+       --posIndices = map snd posTerms
 
        negNames = map fst negTerms
        posNames = map fst posTerms
 
+       --TODO: remove
+       negTermNums = map snd negTerms
+       posTermNums = map snd posTerms
+
+       --shapeConnectionData
        negConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) negNames
        posConnDatas = listEitherToEitherList $ map (findConnDataByName originalCircuit) posNames
+
        currAcc = do
          negConnDatas' <- negConnDatas
          posConnDatas' <- posConnDatas
@@ -244,8 +249,28 @@ getConnPathCoords' (sConnData:xs) originalCircuit acc =
          --TODO: this is gonna be a bug because we don't account
          --for terminals of negConnDatas' and posConnDatas'
 
-         negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
-         posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
+         negConns <- return $ map (\(a, i) ->
+                                    let x1 = getShapeDataConnectionCoords a
+                                        x2 = trace ((show x1) ++ (show i))
+                                                   $ x1
+                                    in snd x2 !! i --head $ snd x2 --fst x2 !! i
+                                       {-if i == 0
+                                       then head . fst $ x2
+                                       else head . snd $ x2-} )
+                                  (zip negConnDatas' negTermNums)
+
+         posConns <- return $ map (\(a, i) ->
+                                    let x1 = getShapeDataConnectionCoords a
+                                        x2 = trace ((show x1) ++ (show i))
+                                                   $ x1
+                                    in fst x2 !! i --head $ snd x2 --fst x2 !! i
+                                       {-if i == 0
+                                       then head . fst $ x2
+                                       else head . snd $ x2-} )
+                                  (zip posConnDatas' posTermNums)
+
+         --negConns <- return $ map (head . fst . getShapeDataConnectionCoords) negConnDatas'
+         --posConns <- return $ map (head . fst . getShapeDataConnectionCoords) posConnDatas'
 
          {-
          negConns <- return $ map (\(a, i) ->
@@ -453,7 +478,6 @@ setShapeConnectionDataArrangedCoords (ShapeConnectionData { getShapeData = sData
 getConnectedElements :: Circuit a b -> Map.Map String ([String], [String])
 --basically goes through list and finds out which elements are connected
 -}
-
 
 getConnectedElements :: Circuit a b -> Map.Map String ([ConnectedTerm], [ConnectedTerm])
 getConnectedElements circ =

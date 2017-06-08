@@ -111,6 +111,31 @@ addTerminalByName terminal elementName = TerminalByName $ elementName : (termina
 --connectElements (CircuitElement {circuitElementName=nameA, element=elA, terminal1=t1A, terminal2=t2A})
 --                (CircuitElement {circuitElementName=nameB, element=elB, terminal1=t1B, terminal2=t2B})
 
+
+connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
+connectElements cElA@(CircuitElement nameA elA t1A t2A)
+                cElB@(CircuitElement nameB elB t1B t2B)
+                aTerm bTerm =
+   connectElements' aTerm bTerm
+      where connectElements' 1 1 =
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = cElB --(CircuitElement nameB elB (addTerminal t1B a) t2B)
+               in (a, b)
+            connectElements' 2 2 =
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = cElB --(CircuitElement nameB elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 1 2 =
+               let a = (CircuitElement nameA elA (addTerminal t1A b) t2A)
+                   b = cElB --(CircuitElement nameB elB t1B (addTerminal t2B a))
+               in (a, b)
+            connectElements' 2 1 =
+               let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
+                   b = cElB --(CircuitElement nameB elB (addTerminal t1B a) t2B)
+               in (a, b)
+
+
+{-
 connectElements :: CircuitElement a -> CircuitElement a -> Int -> Int -> (CircuitElement a, CircuitElement a)
 connectElements (CircuitElement nameA elA t1A t2A)
                 (CircuitElement nameB elB t1B t2B)
@@ -132,6 +157,7 @@ connectElements (CircuitElement nameA elA t1A t2A)
                let a = (CircuitElement nameA elA t1A (addTerminal t2A b))
                    b = (CircuitElement nameB elB (addTerminal t1B a) t2B)
                in (a, b)
+-}
 
 connectElementsByName (CircuitElement nameA elA t1A t2A)
                       (CircuitElement nameB elB t1B t2B)
