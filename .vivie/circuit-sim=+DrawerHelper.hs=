@@ -116,53 +116,51 @@ silent! normal! zE
 64,67fold
 71,72fold
 69,72fold
-74,81fold
-48,85fold
-91,108fold
-112,122fold
-125,136fold
-88,138fold
-142,143fold
-145,154fold
-158,172fold
-140,174fold
-178,183fold
-187,192fold
-194,200fold
-202,206fold
-185,207fold
-216,246fold
-212,247fold
-249,265fold
-271,279fold
-176,282fold
-287,292fold
-294,299fold
-285,301fold
-306,320fold
-322,334fold
-337,342fold
-350,361fold
-363,389fold
-343,390fold
-303,392fold
-399,412fold
-414,428fold
-431,434fold
-437,440fold
-442,457fold
-436,458fold
-436,458fold
-460,466fold
-473,478fold
-480,483fold
-485,505fold
-471,508fold
-469,510fold
-513,515fold
-519,530fold
-20
-normal! zo
+76,83fold
+48,87fold
+93,110fold
+114,124fold
+127,138fold
+90,140fold
+144,145fold
+147,156fold
+160,174fold
+142,176fold
+181,186fold
+190,195fold
+197,203fold
+205,209fold
+188,210fold
+219,293fold
+215,294fold
+296,312fold
+318,326fold
+178,329fold
+333,338fold
+340,345fold
+331,347fold
+352,366fold
+368,380fold
+383,388fold
+396,407fold
+409,436fold
+389,437fold
+442,455fold
+457,471fold
+349,474fold
+477,480fold
+488,503fold
+482,504fold
+482,504fold
+506,512fold
+519,524fold
+526,529fold
+531,543fold
+545,565fold
+517,568fold
+515,570fold
+573,575fold
+579,590fold
 32
 normal! zo
 32
@@ -175,64 +173,60 @@ normal! zo
 normal! zo
 69
 normal! zc
-48
-normal! zc
-88
+76
 normal! zo
-88
-normal! zc
-140
+90
 normal! zo
+90
+normal! zc
 142
 normal! zo
-140
+142
 normal! zc
-176
+178
 normal! zo
-185
+181
 normal! zo
-185
+188
+normal! zo
+205
+normal! zo
+215
+normal! zo
+219
+normal! zo
+331
+normal! zo
+331
 normal! zc
-212
+349
 normal! zo
-212
+389
+normal! zo
+389
 normal! zc
-176
+349
 normal! zc
-285
+482
 normal! zo
-285
+482
+normal! zo
+482
 normal! zc
-303
+515
 normal! zo
-343
+517
 normal! zo
-343
+517
 normal! zc
-303
+515
 normal! zc
-436
-normal! zo
-436
-normal! zo
-437
-normal! zo
-442
-normal! zo
-469
-normal! zo
-471
-normal! zo
-471
-normal! zc
-469
-normal! zc
-let s:l = 26 - ((5 * winheight(0) + 33) / 67)
+let s:l = 258 - ((48 * winheight(0) + 32) / 65)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-26
-normal! 028|
+258
+normal! 042|
 let &so = s:so_save | let &siso = s:siso_save
 doautoall SessionLoadPost
 " vim: set ft=vim :
